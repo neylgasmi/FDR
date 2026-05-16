@@ -38,7 +38,9 @@ def construct_evalue(
         E-value E_i ≥ 0. Under H0 (no jump), E[E_i] ≤ 1 for validity.
     """
     dv = dt_years * sigma_hat_i**2  # Δσ̂²
-    tau = tau_factor * sigma_hat_i * np.sqrt(dt_years)  # Prior scale (scaled by √dt for unit consistency)
+    tau = (
+        tau_factor * sigma_hat_i * np.sqrt(dt_years)
+    )  # Prior scale (scaled by √dt for unit consistency)
     tau2 = tau**2  # τ²
 
     numerator = dv / (dv + tau2)

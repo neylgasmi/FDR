@@ -18,6 +18,7 @@ DT_5S = 5.0
 # Test 1: Distribution H0 vs H1 — séparation visuelle
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_evalue_h0_vs_h1_separation() -> None:
     """
@@ -33,7 +34,7 @@ def test_evalue_h0_vs_h1_separation() -> None:
     from efdr_jumps.evalues import construct_evalue
 
     M = 10_000
-    n = 1_000      # 5000 seconds of 5-sec steps
+    n = 1_000  # 5000 seconds of 5-sec steps
     dt = DT_5S
 
     # H0: pure Heston, no jumps
@@ -81,6 +82,7 @@ def test_evalue_h0_vs_h1_separation() -> None:
 # Test 2: E-power monotone in jump size
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_epower_monotone_in_jump_size() -> None:
     """
@@ -125,6 +127,7 @@ def test_epower_monotone_in_jump_size() -> None:
 # ---------------------------------------------------------------------------
 # Test 3: Dominance vs baselines (E≡1 and p-to-e calibrator)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 def test_epower_dominates_baselines() -> None:
@@ -186,6 +189,7 @@ def test_epower_dominates_baselines() -> None:
 # Test 4: Validity — E[E_i] ≤ 1 under H0
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_evalue_validity_h0() -> None:
     """
@@ -216,6 +220,4 @@ def test_evalue_validity_h0() -> None:
     se_e = np.std(e_vals) / np.sqrt(M)
 
     threshold = 1.0 + 3 * se_e
-    assert mean_e <= threshold, (
-        f"Validity violated: E[E_i]={mean_e:.4f} > 1 + 3·SE={threshold:.4f}"
-    )
+    assert mean_e <= threshold, f"Validity violated: E[E_i]={mean_e:.4f} > 1 + 3·SE={threshold:.4f}"

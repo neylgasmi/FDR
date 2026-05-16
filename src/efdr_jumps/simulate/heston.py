@@ -30,15 +30,15 @@ def _qe_kernel(
 
     # Variance conditional moment coefficients — hoisted outside the loop
     e = np.exp(-kappa * dt)
-    m_const = theta * (1.0 - e)          # theta contribution to E[V_{t+dt}|V_t]
-    s2_c1 = xi * xi * e / kappa * (1.0 - e)                   # V_t coefficient in Var
+    m_const = theta * (1.0 - e)  # theta contribution to E[V_{t+dt}|V_t]
+    s2_c1 = xi * xi * e / kappa * (1.0 - e)  # V_t coefficient in Var
     s2_c2 = theta * xi * xi / (2.0 * kappa) * (1.0 - e) ** 2  # constant in Var
 
     # Log-price coefficients with γ₁ = γ₂ = 0.5 (Andersen eq. 29)
     K0 = -rho * kappa * theta * dt / xi
     K1 = 0.5 * dt * (kappa * rho / xi - 0.5) - rho / xi
     K2 = 0.5 * dt * (kappa * rho / xi - 0.5) + rho / xi
-    K34 = 0.5 * dt * (1.0 - rho * rho)   # K3 = K4 by symmetry
+    K34 = 0.5 * dt * (1.0 - rho * rho)  # K3 = K4 by symmetry
 
     n = len(U)
     for i in range(n):
@@ -48,7 +48,7 @@ def _qe_kernel(
         psi = s2 / (m * m + 1e-14)  # guard against m ≈ 0
 
         if psi < 1e-12:
-            vn = m   # degenerate: variance is deterministic (ξ ≈ 0)
+            vn = m  # degenerate: variance is deterministic (ξ ≈ 0)
         elif psi <= PSI_C:
             inv_psi = 1.0 / psi
             # b² from matching first two moments (Andersen eq. 27)
@@ -58,7 +58,7 @@ def _qe_kernel(
         else:
             p = (psi - 1.0) / (psi + 1.0)
             beta = 2.0 / (m * (psi + 1.0))
-            u = min(U[i], 1.0 - 1e-14)   # guard against u = 1
+            u = min(U[i], 1.0 - 1e-14)  # guard against u = 1
             if u <= p:
                 vn = 0.0
             else:
@@ -68,12 +68,7 @@ def _qe_kernel(
 
         int_var = K34 * (vi + vn)
         log_s[i + 1] = (
-            log_s[i]
-            + mu * dt
-            + K0
-            + K1 * vi
-            + K2 * vn
-            + np.sqrt(max(int_var, 0.0)) * Z_s[i]
+            log_s[i] + mu * dt + K0 + K1 * vi + K2 * vn + np.sqrt(max(int_var, 0.0)) * Z_s[i]
         )
 
     return log_s, v
@@ -126,8 +121,17 @@ class HestonSimulator(PathSimulator):
         Z_s = rng.standard_normal(n_steps)
 
         log_s, v = _qe_kernel(
-            log_s, v, U, Z_v, Z_s,
-            self.kappa, self.theta, self.xi, self.rho, self.mu, dt,
+            log_s,
+            v,
+            U,
+            Z_v,
+            Z_s,
+            self.kappa,
+            self.theta,
+            self.xi,
+            self.rho,
+            self.mu,
+            dt,
         )
 
         times = np.arange(n_steps + 1, dtype=np.float64) * dt_seconds

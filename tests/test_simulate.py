@@ -19,9 +19,9 @@ RNG = np.random.default_rng(42)
 # Helpers
 # ---------------------------------------------------------------------------
 
-TRADING_DAY_SECONDS = 6.5 * 3600   # 23 400 s
+TRADING_DAY_SECONDS = 6.5 * 3600  # 23 400 s
 DT_1S = 1.0
-N_DAY = int(TRADING_DAY_SECONDS)   # 23 400 steps
+N_DAY = int(TRADING_DAY_SECONDS)  # 23 400 steps
 
 
 def _fresh_rng() -> np.random.Generator:
@@ -31,6 +31,7 @@ def _fresh_rng() -> np.random.Generator:
 # ---------------------------------------------------------------------------
 # Interface / shape tests
 # ---------------------------------------------------------------------------
+
 
 def test_heston_result_shapes() -> None:
     sim = HestonSimulator()
@@ -65,6 +66,7 @@ def test_noisy_path_shapes() -> None:
 # KS normality check on standardised increments (no-jump Heston)
 # ---------------------------------------------------------------------------
 
+
 def test_heston_increments_approximately_normal() -> None:
     """
     With very fast mean reversion (kappa=200) V_t ≈ theta for all t.
@@ -73,7 +75,7 @@ def test_heston_increments_approximately_normal() -> None:
     """
     theta = 0.04
     kappa = 200.0
-    dt_s = 5.0   # 5-second steps
+    dt_s = 5.0  # 5-second steps
     dt = dt_s / SECS_PER_YEAR
     n = 5_000
 
@@ -93,6 +95,7 @@ def test_heston_increments_approximately_normal() -> None:
 # Jump index recovery tests
 # ---------------------------------------------------------------------------
 
+
 def test_merton_no_jump_when_lam_zero() -> None:
     sim = MertonSimulator(lam=0.0)
     res = sim.simulate(1_000, DT_1S, _fresh_rng())
@@ -101,7 +104,7 @@ def test_merton_no_jump_when_lam_zero() -> None:
 
 def test_merton_all_steps_jump_when_lam_huge() -> None:
     """With λ·Δt >> 1 every step must have at least one jump."""
-    lam = 1e9   # ~170 jumps per second → virtually certain per step
+    lam = 1e9  # ~170 jumps per second → virtually certain per step
     n = 200
     sim = MertonSimulator(lam=lam, mu_j=0.0, sigma_j=1e-6)
     res = sim.simulate(n, DT_1S, _fresh_rng())
@@ -114,23 +117,25 @@ def test_merton_jump_count_poisson_statistics() -> None:
     Over M short simulations, empirical jump count should be consistent
     with Poisson(λ·T) — verified via Poisson confidence interval.
     """
-    lam = 100.0   # jumps per year
-    dt_s = 60.0   # 1-minute steps
-    n = 390        # ~6.5 hours of 1-min data
+    lam = 100.0  # jumps per year
+    dt_s = 60.0  # 1-minute steps
+    n = 390  # ~6.5 hours of 1-min data
     T_years = n * dt_s / SECS_PER_YEAR
     expected_mean = lam * T_years
 
     M = 200
-    counts = np.array([
-        len(MertonSimulator(lam=lam).simulate(n, dt_s, np.random.default_rng(i)).jump_indices)
-        for i in range(M)
-    ])
+    counts = np.array(
+        [
+            len(MertonSimulator(lam=lam).simulate(n, dt_s, np.random.default_rng(i)).jump_indices)
+            for i in range(M)
+        ]
+    )
     empirical_mean = counts.mean()
     # Within 4 standard deviations of Poisson mean
     poisson_std = np.sqrt(expected_mean)
-    assert abs(empirical_mean - expected_mean) < 4 * poisson_std / np.sqrt(M), (
-        f"Jump count mean {empirical_mean:.3f} far from Poisson mean {expected_mean:.3f}"
-    )
+    assert abs(empirical_mean - expected_mean) < 4 * poisson_std / np.sqrt(
+        M
+    ), f"Jump count mean {empirical_mean:.3f} far from Poisson mean {expected_mean:.3f}"
 
 
 def test_jump_indices_within_valid_range() -> None:
@@ -145,6 +150,7 @@ def test_jump_indices_within_valid_range() -> None:
 # ---------------------------------------------------------------------------
 # Noise tests
 # ---------------------------------------------------------------------------
+
 
 def test_additive_noise_variance() -> None:
     """
@@ -246,9 +252,9 @@ def test_signal_recoverable_by_preavg() -> None:
     # Pre-averaged variance should be ≈ σ²/K; accept within 30% for MC variability
     np.testing.assert_allclose(var_pa, sigma_noise**2 / K, rtol=0.30)
     # And strictly smaller than raw noise
-    assert var_pa < var_raw / (K * 0.4), (
-        f"Pre-averaging did not reduce variance: raw={var_raw:.2e}, pa={var_pa:.2e}"
-    )
+    assert var_pa < var_raw / (
+        K * 0.4
+    ), f"Pre-averaging did not reduce variance: raw={var_raw:.2e}, pa={var_pa:.2e}"
 
 
 def test_three_versions_from_same_seed() -> None:
@@ -287,6 +293,7 @@ def test_three_versions_from_same_seed() -> None:
 # ---------------------------------------------------------------------------
 # Performance: 1 trading day at 1-second resolution in < 100 ms
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.slow
 def test_heston_merton_day_speed() -> None:

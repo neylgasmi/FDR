@@ -13,13 +13,13 @@ from ..simulate.base import SECS_PER_YEAR
 #   rare:     ~0.64   moderate: ~2.12   dense: ~6.37                          #
 # --------------------------------------------------------------------------- #
 _REGIME_LAM: dict[str, float] = {
-    "heston_h0": 0.0,       # pure diffusion, no jumps
-    "rare":      1_500.0,
-    "moderate":  5_000.0,
-    "dense":     15_000.0,
+    "heston_h0": 0.0,  # pure diffusion, no jumps
+    "rare": 1_500.0,
+    "moderate": 5_000.0,
+    "dense": 15_000.0,
 }
 
-_ESTIMATOR_FNS: dict[str, object] = {}   # populated lazily on first import
+_ESTIMATOR_FNS: dict[str, object] = {}  # populated lazily on first import
 
 
 def _get_estimator_fn(kind: str):
@@ -47,12 +47,12 @@ def _get_estimator_fn(kind: str):
 class SimulatorConfig:
     """Simulation parameters for one run."""
 
-    regime: str = "moderate"    # "heston_h0", "rare", "moderate", "dense"
+    regime: str = "moderate"  # "heston_h0", "rare", "moderate", "dense"
     dt_seconds: float = 5.0
     n_steps: int = 500
     # Heston SV params
     kappa: float = 2.0
-    theta: float = 0.04         # long-run variance → σ_base ≈ 0.20 annualized
+    theta: float = 0.04  # long-run variance → σ_base ≈ 0.20 annualized
     xi: float = 0.5
     rho: float = -0.7
     v0: float = 0.04
@@ -66,8 +66,8 @@ class SimulatorConfig:
 class EstimatorConfig:
     """Spot-variance estimator parameters."""
 
-    kind: str = "medrv"    # "medrv", "minrv", "bv", "threshold"
-    window: int = 50       # backward window in number of returns
+    kind: str = "medrv"  # "medrv", "minrv", "bv", "threshold"
+    window: int = 50  # backward window in number of returns
 
 
 @dataclass
@@ -89,10 +89,10 @@ class FDRConfig:
 class DetectorResult:
     """Output of a single run_detector call."""
 
-    rejection_set: frozenset[int]   # 0-indexed return indices
-    true_jumps: frozenset[int]      # 0-indexed return indices
+    rejection_set: frozenset[int]  # 0-indexed return indices
+    true_jumps: frozenset[int]  # 0-indexed return indices
     n_hypotheses: int
-    wall_clock: float               # seconds for the full run
+    wall_clock: float  # seconds for the full run
     sim_config: SimulatorConfig = field(repr=False)
     est_config: EstimatorConfig = field(repr=False)
     fdr_config: FDRConfig = field(repr=False)
@@ -146,15 +146,11 @@ def run_detector(
 
     result = simulator.simulate(sim_config.n_steps, sim_config.dt_seconds, rng)
     log_price = result.log_price
-    r = np.diff(log_price)          # (n_steps,) returns
+    r = np.diff(log_price)  # (n_steps,) returns
     n = len(r)
 
     # Ground-truth: convert log_price jump indices → return indices (0-based)
-    true_jumps = frozenset(
-        int(j) - 1
-        for j in result.jump_indices
-        if 1 <= int(j) <= n
-    )
+    true_jumps = frozenset(int(j) - 1 for j in result.jump_indices if 1 <= int(j) <= n)
 
     # ------------------------------------------------------------------ #
     # 2. Dispatch to BH baselines or e-value procedures                   #
@@ -248,12 +244,20 @@ def _run_evalue_algo(
     elif algo == "elond":
         rejects = list(elond(e_values, alpha))
     elif algo == "elord":
-        rejects = list(elord(e_values, alpha, w1=fdr_config.w1,
-                             phi=fdr_config.phi, psi=fdr_config.psi))
+        rejects = list(
+            elord(e_values, alpha, w1=fdr_config.w1, phi=fdr_config.phi, psi=fdr_config.psi)
+        )
     elif algo == "esaffron":
-        rejects = list(esaffron(e_values, alpha, w1=fdr_config.w1,
-                                phi=fdr_config.phi, psi=fdr_config.psi,
-                                lambda_cand=fdr_config.lambda_cand))
+        rejects = list(
+            esaffron(
+                e_values,
+                alpha,
+                w1=fdr_config.w1,
+                phi=fdr_config.phi,
+                psi=fdr_config.psi,
+                lambda_cand=fdr_config.lambda_cand,
+            )
+        )
     elif algo == "stopped_ebh":
         rejects = list(stopped_ebh(e_values, alpha))
     else:

@@ -6,7 +6,7 @@ from scipy.special import gamma
 from ..simulate.base import SECS_PER_YEAR
 
 # E[|Z|^p] constants for Z ~ N(0,1)
-_MU1: float = np.sqrt(2.0 / np.pi)                              # E[|Z|]
+_MU1: float = np.sqrt(2.0 / np.pi)  # E[|Z|]
 _MU43: float = 2.0 ** (2.0 / 3.0) * gamma(7.0 / 6.0) / gamma(0.5)  # E[|Z|^{4/3}]
 # Asymptotic variance constant (Barndorff-Nielsen & Shephard 2006)
 _BNS_THETA: float = (np.pi / 2.0) ** 2 + np.pi - 5.0
@@ -84,10 +84,10 @@ def lee_mykland_stat(
     K = window
 
     # P[j] = |r[j]| × |r[j+1]|  — consecutive absolute-return products
-    P = np.abs(r[:-1]) * np.abs(r[1:])   # shape (n-1,)
+    P = np.abs(r[:-1]) * np.abs(r[1:])  # shape (n-1,)
     cumP = np.empty(n, dtype=np.float64)
     cumP[0] = 0.0
-    np.cumsum(P, out=cumP[1:])            # cumP[j] = Σ P[0:j]
+    np.cumsum(P, out=cumP[1:])  # cumP[j] = Σ P[0:j]
 
     L = np.full(n, np.nan)
     if K >= n:

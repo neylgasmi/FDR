@@ -13,8 +13,8 @@ SECS_PER_YEAR: float = 252.0 * 6.5 * 3600.0
 class SimulationResult:
     """Output of any PathSimulator.simulate() call."""
 
-    times: np.ndarray       # (N+1,)  seconds since market open
-    log_price: np.ndarray   # (N+1,)  natural log of price
+    times: np.ndarray  # (N+1,)  seconds since market open
+    log_price: np.ndarray  # (N+1,)  natural log of price
     jump_indices: np.ndarray  # (K,)  indices into `times` where jumps land
     sigma_path: np.ndarray  # (N+1,)  annualized spot volatility
 

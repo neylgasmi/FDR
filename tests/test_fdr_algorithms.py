@@ -385,8 +385,6 @@ def test_esaffron_candidate_preserves_wealth():
     alpha = 0.1
     w1 = 0.2
     lam = 0.1
-    cand_threshold = 1.0 / lam  # = 10
-
     # Stream A: non-candidate (e=1) then tested (e=1e-9)
     stream_A = [1.0, 1e-9]
     # Stream B: candidate (e=100) then tested (e=1e-9)
@@ -503,9 +501,9 @@ def test_stopped_ebh_fdr_validity_pareto():
 
     fdr = np.mean(fdps)
     se = np.std(fdps) / np.sqrt(M)
-    assert fdr <= alpha + 2 * se, (
-        f"stopped e-BH Pareto FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
-    )
+    assert (
+        fdr <= alpha + 2 * se
+    ), f"stopped e-BH Pareto FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
 @pytest.mark.slow
@@ -525,6 +523,6 @@ def test_stopped_ebh_fdr_validity_heston():
 
     fdr = np.mean(fdps)
     se = np.std(fdps) / np.sqrt(M)
-    assert fdr <= alpha + 2 * se, (
-        f"stopped e-BH Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
-    )
+    assert (
+        fdr <= alpha + 2 * se
+    ), f"stopped e-BH Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"

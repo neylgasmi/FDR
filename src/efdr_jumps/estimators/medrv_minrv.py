@@ -7,7 +7,7 @@ from ..simulate.base import SECS_PER_YEAR
 # Scale factors from Andersen, Dobrev, Schaumburg (2012) eqs. (12)–(13).
 # They correct for E[min(|Z₁|,|Z₂|)²] = (π-2)/π and
 # E[med(|Z₁|,|Z₂|,|Z₃|)²] = (6-4√3+π)/π.
-_SCALE_MIN: float = np.pi / (np.pi - 2.0)               # ≈ 2.7141
+_SCALE_MIN: float = np.pi / (np.pi - 2.0)  # ≈ 2.7141
 _SCALE_MED: float = np.pi / (6.0 - 4.0 * np.sqrt(3.0) + np.pi)  # ≈ 1.4191
 
 
@@ -18,8 +18,8 @@ def minrv(log_price: np.ndarray, dt_seconds: float) -> float:
     """
     r = np.diff(log_price)
     n = len(r)
-    iv_raw = _SCALE_MIN * n / (n - 1) * float(
-        np.sum(np.minimum(np.abs(r[:-1]), np.abs(r[1:])) ** 2)
+    iv_raw = (
+        _SCALE_MIN * n / (n - 1) * float(np.sum(np.minimum(np.abs(r[:-1]), np.abs(r[1:])) ** 2))
     )
     T = n * dt_seconds / SECS_PER_YEAR
     return iv_raw / T

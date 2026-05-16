@@ -6,6 +6,7 @@ Usage:
     python experiments/02_power_grid.py --config experiments/configs/grid_main.yaml \\
         --output results/grid_main.parquet --n-jobs -1
 """
+
 from __future__ import annotations
 
 import argparse
@@ -29,7 +30,6 @@ from efdr_jumps.pipeline.detector import (
     run_detector,
 )
 from efdr_jumps.pipeline.metrics import (
-    aggregate,
     detection_delays,
     f1_score,
     fdp,
@@ -168,15 +168,19 @@ def _print_ranking(df: pd.DataFrame, alpha: float) -> None:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Monte Carlo power grid for efdr-jumps")
     parser.add_argument(
-        "--config", default="experiments/configs/grid_quick.yaml",
+        "--config",
+        default="experiments/configs/grid_quick.yaml",
         help="Path to YAML config",
     )
     parser.add_argument(
-        "--output", default=None,
+        "--output",
+        default=None,
         help="Output parquet path (default: results/<config_stem>.parquet)",
     )
     parser.add_argument(
-        "--n-jobs", type=int, default=-2,
+        "--n-jobs",
+        type=int,
+        default=-2,
         help="joblib n_jobs (-2 = all cores but one, -1 = all cores)",
     )
     args = parser.parse_args(argv)
@@ -185,8 +189,8 @@ def main(argv: list[str] | None = None) -> None:
     with open(cfg_path) as f:
         cfg = yaml.safe_load(f)
 
-    output_path = Path(args.output) if args.output else (
-        Path("results") / f"{cfg_path.stem}.parquet"
+    output_path = (
+        Path(args.output) if args.output else (Path("results") / f"{cfg_path.stem}.parquet")
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 

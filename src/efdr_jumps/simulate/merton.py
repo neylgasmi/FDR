@@ -43,7 +43,7 @@ class MertonSimulator(PathSimulator):
         rng: np.random.Generator,
     ) -> SimulationResult:
         dt = dt_seconds / SECS_PER_YEAR
-        k_bar = np.exp(self.mu_j + 0.5 * self.sigma_j ** 2) - 1.0
+        k_bar = np.exp(self.mu_j + 0.5 * self.sigma_j**2) - 1.0
 
         # Heston with drift adjusted for jump mean-correction
         heston_adj = HestonSimulator(

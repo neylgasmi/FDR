@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from efdr_jumps.pipeline.detector import (
-    DetectorResult,
     EstimatorConfig,
     FDRConfig,
     SimulatorConfig,
@@ -92,10 +91,22 @@ def test_rejection_rate():
 
 def test_aggregate_basic():
     runs = [
-        {"fdp": 0.0, "power": 1.0, "f1": 1.0, "delay_mean": 0.0,
-         "delay_median": 0.0, "rej_rate": 0.1},
-        {"fdp": 0.1, "power": 0.8, "f1": 0.9, "delay_mean": 1.0,
-         "delay_median": 1.0, "rej_rate": 0.05},
+        {
+            "fdp": 0.0,
+            "power": 1.0,
+            "f1": 1.0,
+            "delay_mean": 0.0,
+            "delay_median": 0.0,
+            "rej_rate": 0.1,
+        },
+        {
+            "fdp": 0.1,
+            "power": 0.8,
+            "f1": 0.9,
+            "delay_mean": 1.0,
+            "delay_median": 1.0,
+            "rej_rate": 0.05,
+        },
     ]
     agg = aggregate(runs)
     assert agg["fdp"] == pytest.approx(0.05)
@@ -117,7 +128,7 @@ def test_run_detector_heston_h0():
     assert isinstance(result.rejection_set, frozenset)
     assert result.n_hypotheses == 100
     assert result.wall_clock > 0.0
-    assert len(result.true_jumps) == 0   # H0: no jumps
+    assert len(result.true_jumps) == 0  # H0: no jumps
     assert fdp(result.rejection_set, result.true_jumps) == 0.0
 
 
@@ -175,9 +186,9 @@ def test_pipeline_fdr_validity_moderate():
 
     fdr_empirical = float(np.mean(fdps))
     se = float(np.std(fdps) / np.sqrt(M))
-    assert fdr_empirical <= alpha + 2 * se, (
-        f"e-LOND pipeline FDR={fdr_empirical:.4f} > alpha+2SE={alpha + 2*se:.4f}"
-    )
+    assert (
+        fdr_empirical <= alpha + 2 * se
+    ), f"e-LOND pipeline FDR={fdr_empirical:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
 @pytest.mark.slow

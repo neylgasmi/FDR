@@ -25,10 +25,7 @@ def power(
     """
     if not true_jumps:
         return float("nan")
-    detected = sum(
-        any((t + d) in rejection_set for d in range(-k, k + 1))
-        for t in true_jumps
-    )
+    detected = sum(any((t + d) in rejection_set for d in range(-k, k + 1)) for t in true_jumps)
     return detected / len(true_jumps)
 
 
@@ -47,10 +44,9 @@ def f1_score(
     if not true_jumps or not rejection_set:
         return 0.0
 
-    prec = sum(
-        any((r + d) in true_jumps for d in range(-k, k + 1))
-        for r in rejection_set
-    ) / len(rejection_set)
+    prec = sum(any((r + d) in true_jumps for d in range(-k, k + 1)) for r in rejection_set) / len(
+        rejection_set
+    )
 
     rec = power(rejection_set, true_jumps, k)
 

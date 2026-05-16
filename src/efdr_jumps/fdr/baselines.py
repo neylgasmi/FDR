@@ -21,10 +21,10 @@ def bh(p_values: Iterable[float], alpha: float) -> list[bool]:
     if n == 0:
         return []
 
-    order = np.argsort(pv)                       # ascending
+    order = np.argsort(pv)  # ascending
     pv_sorted = pv[order]
 
-    thresholds = alpha * np.arange(1, n + 1) / n   # alpha*k/n for k=1..n
+    thresholds = alpha * np.arange(1, n + 1) / n  # alpha*k/n for k=1..n
     qualifying = np.where(pv_sorted <= thresholds)[0]
 
     if len(qualifying) == 0:
@@ -84,7 +84,7 @@ def bh_bns(
     pv = np.ones(n)
 
     for i in range(n):
-        if i < window:     # full window required: partial window gives unstable BV
+        if i < window:  # full window required: partial window gives unstable BV
             continue
         start = max(0, i - window)
         # sub = log_price[start:i+1] → returns r[start:i] (excludes r[i])
@@ -112,8 +112,9 @@ def bh_bns_global(
     Use for day-level filtering, not per-return comparison.
     Reference: Bajgrowicz-Scaillet (2016).
     """
-    from ..estimators.bipower import bns_ratio_stat
     from scipy import stats as _stats
+
+    from ..estimators.bipower import bns_ratio_stat
 
     z = bns_ratio_stat(log_price, dt_seconds)
     return float(_stats.norm.sf(z)) <= alpha

@@ -30,14 +30,14 @@ def spot_variance(
     -------
     sigma_sq : (N,) array, NaN where the window has fewer than 2 returns.
     """
-    n = len(log_price) - 1          # number of returns
+    n = len(log_price) - 1  # number of returns
     sigma_sq = np.full(n, np.nan)
 
     for i in range(n):
         # Window: r[max(0, i-K) : i]  →  log_price[max(0, i-K) : i+1]
         start = max(0, i - K)
-        sub = log_price[start : i + 1]   # i+1-start prices → i-start returns
-        if len(sub) < 4:                  # need ≥ 3 returns (medrv needs triplets)
+        sub = log_price[start : i + 1]  # i+1-start prices → i-start returns
+        if len(sub) < 4:  # need ≥ 3 returns (medrv needs triplets)
             continue
         sigma_sq[i] = estimator_fn(sub, dt_seconds)
 
@@ -67,7 +67,7 @@ def assert_window_excludes_test_point(
     lp_corrupt = log_price.copy()
     # shift log_price[i+1:] by a large value so r[i] is huge
     lp_corrupt[i + 1 :] += 1e6
-    sub_corrupt = lp_corrupt[start : i + 1]   # unchanged: stops at i+1 (exclusive)
+    sub_corrupt = lp_corrupt[start : i + 1]  # unchanged: stops at i+1 (exclusive)
     est_corrupt = estimator_fn(sub_corrupt, dt_seconds)
 
     assert est_normal == est_corrupt, (

@@ -24,8 +24,8 @@ from efdr_jumps.simulate import HestonSimulator, MertonSimulator
 _HESTON = HestonSimulator(kappa=2.0, theta=0.04, xi=0.5, rho=-0.7, v0=0.04)
 _MERTON = MertonSimulator(heston=_HESTON, lam=5.0, mu_j=-0.01, sigma_j=0.02)
 
-DT_5S = 5.0      # 5-second steps — moderate frequency
-DT_1MIN = 60.0   # 1-minute steps
+DT_5S = 5.0  # 5-second steps — moderate frequency
+DT_1MIN = 60.0  # 1-minute steps
 
 ESTIMATORS = {
     "rv": realized_variance,
@@ -48,6 +48,7 @@ def _sim_jump(n: int, dt: float, seed: int) -> np.ndarray:
 # 1. Convergence under no-jump diffusion
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_estimators_converge_no_jump() -> None:
     """
@@ -56,13 +57,11 @@ def test_estimators_converge_no_jump() -> None:
     The mean bias must shrink as frequency increases.
     """
     M = 200
-    freqs = [(DT_1MIN, 390), (DT_5S, 4_680)]   # (dt_seconds, n_steps)
+    freqs = [(DT_1MIN, 390), (DT_5S, 4_680)]  # (dt_seconds, n_steps)
 
     for dt, n in freqs:
         for name, fn in ESTIMATORS.items():
-            estimates = [
-                fn(_sim_no_jump(n, dt, seed), dt) for seed in range(M)
-            ]
+            estimates = [fn(_sim_no_jump(n, dt, seed), dt) for seed in range(M)]
             mean_est = float(np.mean(estimates))
             rel_bias = abs(mean_est - _HESTON.theta) / _HESTON.theta
             assert rel_bias < 0.15, (
@@ -75,6 +74,7 @@ def test_estimators_converge_no_jump() -> None:
 # 2. Bias under moderate jumps (MedRV/MinRV robust, BV/RV biased)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.slow
 def test_medrv_minrv_bias_under_jumps() -> None:
     """
@@ -84,20 +84,20 @@ def test_medrv_minrv_bias_under_jumps() -> None:
     - BV: bias > 5% (negative control, less robust than Med/Min)
     """
     M = 200
-    n = 4_680          # 5-sec steps for 6.5 hours
+    n = 4_680  # 5-sec steps for 6.5 hours
     dt = DT_5S
     theta = _HESTON.theta  # 0.04
 
-    rv_est   = [realized_variance(_sim_jump(n, dt, s), dt) for s in range(M)]
-    bv_est   = [bipower_variation(_sim_jump(n, dt, s), dt) for s in range(M)]
-    med_est  = [medrv(_sim_jump(n, dt, s), dt) for s in range(M)]
-    min_est  = [minrv(_sim_jump(n, dt, s), dt) for s in range(M)]
+    rv_est = [realized_variance(_sim_jump(n, dt, s), dt) for s in range(M)]
+    bv_est = [bipower_variation(_sim_jump(n, dt, s), dt) for s in range(M)]
+    med_est = [medrv(_sim_jump(n, dt, s), dt) for s in range(M)]
+    min_est = [minrv(_sim_jump(n, dt, s), dt) for s in range(M)]
 
     def rel_bias(ests: list[float]) -> float:
         return float((np.mean(ests) - theta) / theta)
 
-    rb_rv  = rel_bias(rv_est)
-    _      = rel_bias(bv_est)   # computed but only used as ordering check
+    rb_rv = rel_bias(rv_est)
+    _ = rel_bias(bv_est)  # computed but only used as ordering check
     rb_med = rel_bias(med_est)
     rb_min = rel_bias(min_est)
 
@@ -111,6 +111,7 @@ def test_medrv_minrv_bias_under_jumps() -> None:
 # ---------------------------------------------------------------------------
 # 3. Spot variance: window explicitly excludes the test point
 # ---------------------------------------------------------------------------
+
 
 def test_spot_window_excludes_test_point() -> None:
     """
@@ -150,6 +151,7 @@ def test_spot_variance_roughly_correct() -> None:
 # 4. Lee-Mykland statistic: under H0, approximately standard normal
 # ---------------------------------------------------------------------------
 
+
 def test_lee_mykland_approximately_normal() -> None:
     """Under no-jump Heston, L(i) should be ≈ N(0,1)."""
     from scipy import stats
@@ -166,6 +168,7 @@ def test_lee_mykland_approximately_normal() -> None:
 # 5. BNS stat: positive under jumps, near zero under no-jump
 # ---------------------------------------------------------------------------
 
+
 def test_bns_stat_near_zero_under_no_jump() -> None:
     """Under no-jump Heston, BNS stat should be small (not extreme)."""
     n = 4_000
@@ -181,14 +184,13 @@ def test_bns_stat_larger_under_jumps() -> None:
     n = 4_680
     no_jump = [bns_ratio_stat(_sim_no_jump(n, DT_5S, s), DT_5S) for s in range(M)]
     with_jump = [bns_ratio_stat(_sim_jump(n, DT_5S, s), DT_5S) for s in range(M)]
-    assert np.mean(with_jump) > np.mean(no_jump), (
-        "BNS stat not larger under jumps"
-    )
+    assert np.mean(with_jump) > np.mean(no_jump), "BNS stat not larger under jumps"
 
 
 # ---------------------------------------------------------------------------
 # 6. Pre-averaging: noise-robust (basic sanity on noisy path)
 # ---------------------------------------------------------------------------
+
 
 def test_preavg_rv_sanity() -> None:
     """Pre-averaged RV returns a positive finite value."""

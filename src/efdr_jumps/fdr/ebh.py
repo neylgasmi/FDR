@@ -29,16 +29,16 @@ def ebh(e_values: Iterable[float], alpha: float) -> list[bool]:
     if n == 0:
         return []
 
-    order = np.argsort(ev)[::-1]          # indices that sort ev descending
-    ev_sorted = ev[order]                  # E_(1) ≥ ... ≥ E_(n)
+    order = np.argsort(ev)[::-1]  # indices that sort ev descending
+    ev_sorted = ev[order]  # E_(1) ≥ ... ≥ E_(n)
 
-    thresholds = n / (alpha * np.arange(1, n + 1))   # n/(alpha*k) for k=1..n
+    thresholds = n / (alpha * np.arange(1, n + 1))  # n/(alpha*k) for k=1..n
     qualifying = np.where(ev_sorted >= thresholds)[0]
 
     if len(qualifying) == 0:
         return [False] * n
 
-    k_star = int(qualifying[-1]) + 1      # largest k such that E_(k) >= n/(alpha*k)
+    k_star = int(qualifying[-1]) + 1  # largest k such that E_(k) >= n/(alpha*k)
     cutoff = n / (alpha * k_star)
 
     return [bool(ev[i] >= cutoff) for i in range(n)]

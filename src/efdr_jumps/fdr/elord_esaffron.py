@@ -44,9 +44,9 @@ def elord(
     bool
         True if H_t is rejected, False otherwise.
     """
-    rw = alpha      # remaining wealth rw_1 = alpha
+    rw = alpha  # remaining wealth rw_1 = alpha
     omega = w1
-    R = 0           # rejections before current step
+    R = 0  # rejections before current step
 
     for t, e_t in enumerate(e_values, start=1):
         alpha_t = max(0.0, omega * rw * (R + 1))
@@ -59,9 +59,7 @@ def elord(
 
         # omega update (eq. 9): adjust toward higher spending after non-rejections,
         # lower spending after rejections, to hedge against alpha-death
-        omega = (omega
-                 + w1 * phi ** (t - R_new) * (1 - delta_t)
-                 - w1 * psi ** R_new * delta_t)
+        omega = omega + w1 * phi ** (t - R_new) * (1 - delta_t) - w1 * psi**R_new * delta_t
         omega = max(0.0, min(1.0, omega))
 
         R = R_new
@@ -116,10 +114,10 @@ def esaffron(
     bool
         True if H_t is rejected, False otherwise.
     """
-    rw = alpha * (1.0 - lambda_cand)   # reduced initial wealth for SAFFRON
+    rw = alpha * (1.0 - lambda_cand)  # reduced initial wealth for SAFFRON
     omega = w1
     R = 0
-    cand_threshold = 1.0 / lambda_cand   # E_t >= cand_threshold → candidate
+    cand_threshold = 1.0 / lambda_cand  # E_t >= cand_threshold → candidate
 
     for t, e_t in enumerate(e_values, start=1):
         alpha_t = max(0.0, omega * rw * (R + 1))
@@ -132,9 +130,7 @@ def esaffron(
         rw = max(0.0, rw * (1.0 - omega * is_noncand))
 
         # omega update: same as e-LORD
-        omega = (omega
-                 + w1 * phi ** (t - R_new) * (1 - delta_t)
-                 - w1 * psi ** R_new * delta_t)
+        omega = omega + w1 * phi ** (t - R_new) * (1 - delta_t) - w1 * psi**R_new * delta_t
         omega = max(0.0, min(1.0, omega))
 
         R = R_new

@@ -43,7 +43,7 @@ def elond(
     bool
         True if H_t is rejected, False otherwise.
     """
-    R = 0   # rejections so far
+    R = 0  # rejections so far
     for t, e_t in enumerate(e_values, start=1):
         alpha_t = alpha * _gamma(t) * (R + 1)
         reject = e_t >= 1.0 / alpha_t if alpha_t > 0 else False

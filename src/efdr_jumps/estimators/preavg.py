@@ -51,18 +51,18 @@ def preavg_rv(
     if n_blocks < 2:
         raise ValueError(f"Need ≥ 2 blocks; got {n_blocks} with K={K}, n={n}")
 
-    g = _triangular_weights(K)                                  # (K,)
-    g_sq_sum = float(np.dot(g, g))                             # ||g||²
+    g = _triangular_weights(K)  # (K,)
+    g_sq_sum = float(np.dot(g, g))  # ||g||²
 
-    r_trunc = r[: n_blocks * K].reshape(n_blocks, K)           # (n_blocks, K)
-    r_bar = r_trunc @ g                                         # (n_blocks,)
+    r_trunc = r[: n_blocks * K].reshape(n_blocks, K)  # (n_blocks, K)
+    r_bar = r_trunc @ g  # (n_blocks,)
 
     dt = dt_seconds / SECS_PER_YEAR
     raw = float(np.sum(r_bar**2)) / (n_blocks * dt * g_sq_sum)
 
     if noise_corrected:
         # Rough noise variance: σ̂²_ε ≈ Σ rᵢ² / (2n) (high-frequency noise estimator)
-        sigma_eps_sq = float(np.sum(r[:n_blocks * K] ** 2)) / (2 * n_blocks * K)
+        sigma_eps_sq = float(np.sum(r[: n_blocks * K] ** 2)) / (2 * n_blocks * K)
         # Bias from noise in pre-averaged return: (2 σ²_ε / dt) × (||g||² - <g,shift(g)>)
         # Approximate using continuous constant ψ₁:
         noise_bias = _PSI1 * sigma_eps_sq / (dt * K)
@@ -91,12 +91,10 @@ def preavg_bv(
     g_sq_sum = float(np.dot(g, g))
 
     r_trunc = r[: n_blocks * K].reshape(n_blocks, K)
-    r_bar = r_trunc @ g   # (n_blocks,)
+    r_bar = r_trunc @ g  # (n_blocks,)
 
     # BV on pre-averaged returns (π/2 scale factor, finite-sample correction)
     m = len(r_bar)
-    bv_raw = (np.pi / 2.0) * (m / (m - 1)) * float(
-        np.sum(np.abs(r_bar[:-1]) * np.abs(r_bar[1:]))
-    )
+    bv_raw = (np.pi / 2.0) * (m / (m - 1)) * float(np.sum(np.abs(r_bar[:-1]) * np.abs(r_bar[1:])))
     dt = dt_seconds / SECS_PER_YEAR
     return bv_raw / (n_blocks * dt * g_sq_sum)
