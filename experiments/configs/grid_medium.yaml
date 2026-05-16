@@ -1,0 +1,9 @@
+n_steps: 500
+frequencies_seconds: [5, 60, 300]
+jump_regimes: [rare, moderate, hawkes_dense]
+jump_sizes_in_sigma: [3, 5]
+alpha: [0.05, 0.10]
+wealth_fractions: [0.1, 0.5]     # 2 levels enough for hawkes_dense validation
+M_replications: 100
+algorithms: [ebh, bh_lm, bh_bns, elond, elord, esaffron, stopped_ebh]
+estimators: [medrv]

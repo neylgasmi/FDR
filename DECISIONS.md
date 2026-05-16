@@ -116,6 +116,106 @@ delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 
 ---
 
+---
+
+## Étape 8 — Grille Monte Carlo complète (session du 16 mai 2026)
+
+### Régime hawkes_dense : processus Hawkes auto-excitant
+
+**Motivation :** Le régime `dense` (Merton, λ=15 000/an) ne modélise pas la dépendance temporelle. Pour tester le contrôle FDR sous dépendance (clustering de sauts), il faut un processus auto-excitant.
+
+**Formule (temps discret) :**
+```
+λ_{n+1} = μ + (λ_n − μ)·exp(−β·Δt) + α·N_n
+```
+
+**Paramètres par défaut :**
+- `mu_per_year = 5 000` (baseline = moderate Poisson)
+- `alpha_per_year = 88 000` (boost post-saut)
+- `beta_per_sec = 0.03` (demi-vie ≈ 23s ≈ 4.6 ticks à 5s)
+- Branching ratio continu : m = α/(β × SECS_PER_YEAR) ≈ **0.50** (stable)
+
+**Validation :** Sur 30 seeds (n=200, dt=5s) → 3.8 sauts/path vs 1.3 pour moderate (ratio ≈ 3). ✓
+
+**Limitation connue :** L'approximation discrète est précise pour Δt petit. À Δt=300s le ratio de branchement discret dépasse 1 (instabilité apparente), mais le processus reste bien défini grâce à la saturation naturelle de la probabilité (1−exp(−λ·Δt) ≤ 1). Ce régime est le plus informatif à haute fréquence (1–30s).
+
+---
+
+### Paramètres de la grille Monte Carlo
+
+**grid_medium.yaml** (validation, ~7 min avec 3 workers sur 4 cœurs) :
+- n_steps=500, 3 fréqs [5, 60, 300], 3 régimes, 2 tailles, 2 alpha, 2 wealth, M=100
+- 32 400 tasks total
+
+**grid_main.yaml** (run final, ~2.9h avec 3 workers) :
+- n_steps=2000, 5 fréqs, 3 régimes (incl. hawkes_dense), 2 tailles, 2 alpha, 4 wealth, M=500
+- 390 000 tasks total ; séquentiel ~20h → parallèle ~2.9h
+
+**Benchmark single-run à n=2000 :**
+| algo | ms/run |
+|---|---|
+| bh_lm | 1 |
+| ebh | 170 |
+| elond | 185 |
+| esaffron | 174 |
+| elord | 187 |
+| bh_bns | 257 |
+| stopped_ebh | 346 |
+
+---
+
+### `mixed` jump size : différé
+
+**Décision :** `jump_sizes_in_sigma: [3, 5, mixed]` est retiré car `float("mixed")` crashe le runner. La taille mixte (distribution de taille de saut variable) nécessite un support dédié dans `_expand_grid()`.
+
+---
+
+### wealth_fractions pour n=2000 : corrigé vers la recommandation e-GAI
+
+**Problème :** `[0.1, 0.25, 0.5, 0.75]` causent toutes l'alpha-death pour n=2000. Confirmé sur grid_medium (n=500, w1=0.1 → e-LOND/e-SAFFRON power≈0).
+
+**Correction :** `[0.0005, 0.0025, 0.005, 0.05]`
+- `1/n = 0.0005` : valeur canonique e-GAI (Zhang et al. 2025)
+- `5/n = 0.0025` : voisinage canonique
+- `0.005` : validé safe pour n=500 dans grid_quick (extrapolé pour n=2000)
+- `0.05` : illustre l'onset de l'alpha-death (pédagogique)
+
+---
+
+## Findings — Étape 8 (grid_medium, 16 mai 2026)
+
+### Résultat principal : BH viole le FDR à haute fréquence, indépendamment du régime
+
+**Observation :** Sur grid_medium (M=100, n=500), BH-BNS et BH-LM violent le critère FDR ≤ α + 2·SE **uniquement à dt=5s**, sur tous les régimes (rare, moderate, hawkes_dense) :
+
+| dt | FDR BH-BNS (tous régimes) | Violé (α=0.05) ? |
+|----|---|---|
+| 5s | 0.091–0.099 | Oui |
+| 60s | 0.009–0.045 | Non |
+| 300s | ≈0 | Non |
+
+Les e-values (ebh, elond, stopped_ebh) contrôlent le FDR à toutes les fréquences (FDR ≤ 0.033 ≤ α + 2·SE).
+
+**Interprétation :** La BV (bipower variation) sous-estime la volatilité spot à 5 secondes à cause de la corrélation négative induite par le bruit microstructure (effet bid-ask "bounce"). Cette sous-estimation gonfle la statistique BNS et crée de faux sauts. Références : Aït-Sahalia-Mykland-Zhang 2005, Bajgrowicz-Scaillet 2016.
+
+**Argument méthodologique central du projet :** les e-values sont valides sous dépendance arbitraire (leur validité ne suppose pas le PRDS de BH). La dépendance microstructure à haute fréquence est précisément ce qui rend le PRDS intenable pour BH. Les e-values offrent donc un meilleur trade-off sécurité/puissance à HF. Avec pré-moyennage (preavg_bv), la violation BH disparaîtrait — mais au coût d'une réduction de puissance substantielle.
+
+**Le clustering Hawkes ne spécifie pas la violation BH :** BH viole le FDR autant sur moderate (Poisson, pas de dépendance temporelle) que sur hawkes_dense. Le régime hawkes_dense sert néanmoins de test de robustesse : les e-values restent valides même sous clustering auto-excitant.
+
+**Puissance à dt=5s, α=0.05, hawkes_dense :**
+
+| algo | FDR | power | FDR contrôlé ? |
+|---|---|---|---|
+| BH-BNS | 0.091 | 0.423 | Non |
+| BH-LM | 0.091 | 0.423 | Non |
+| stopped_ebh | 0.017 | 0.303 | Oui |
+| ebh | 0.009 | 0.280 | Oui |
+| e-LOND | 0.000 | 0.204 | Oui |
+| e-LORD | ≈0 | ≈0 | Oui (alpha-death w1=0.1) |
+| e-SAFFRON | ≈0 | ≈0 | Oui (alpha-death w1=0.1) |
+
+---
+
 ## Sessions précédentes
 
 *(Décisions des Étapes 1–5 non documentées ici — ajoutées rétrospectivement si besoin.)*
