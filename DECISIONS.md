@@ -116,6 +116,60 @@ delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 
 ---
 
+---
+
+## Étape 8 — Grille Monte Carlo complète (session du 16 mai 2026)
+
+### Régime hawkes_dense : processus Hawkes auto-excitant
+
+**Motivation :** Le régime `dense` (Merton, λ=15 000/an) ne modélise pas la dépendance temporelle. Pour tester le contrôle FDR sous dépendance (clustering de sauts), il faut un processus auto-excitant.
+
+**Formule (temps discret) :**
+```
+λ_{n+1} = μ + (λ_n − μ)·exp(−β·Δt) + α·N_n
+```
+
+**Paramètres par défaut :**
+- `mu_per_year = 5 000` (baseline = moderate Poisson)
+- `alpha_per_year = 88 000` (boost post-saut)
+- `beta_per_sec = 0.03` (demi-vie ≈ 23s ≈ 4.6 ticks à 5s)
+- Branching ratio continu : m = α/(β × SECS_PER_YEAR) ≈ **0.50** (stable)
+
+**Validation :** Sur 30 seeds (n=200, dt=5s) → 3.8 sauts/path vs 1.3 pour moderate (ratio ≈ 3). ✓
+
+**Limitation connue :** L'approximation discrète est précise pour Δt petit. À Δt=300s le ratio de branchement discret dépasse 1 (instabilité apparente), mais le processus reste bien défini grâce à la saturation naturelle de la probabilité (1−exp(−λ·Δt) ≤ 1). Ce régime est le plus informatif à haute fréquence (1–30s).
+
+---
+
+### Paramètres de la grille Monte Carlo
+
+**grid_medium.yaml** (validation, ~7 min avec 3 workers sur 4 cœurs) :
+- n_steps=500, 3 fréqs [5, 60, 300], 3 régimes, 2 tailles, 2 alpha, 2 wealth, M=100
+- 32 400 tasks total
+
+**grid_main.yaml** (run final, ~2.9h avec 3 workers) :
+- n_steps=2000, 5 fréqs, 3 régimes (incl. hawkes_dense), 2 tailles, 2 alpha, 4 wealth, M=500
+- 390 000 tasks total ; séquentiel ~20h → parallèle ~2.9h
+
+**Benchmark single-run à n=2000 :**
+| algo | ms/run |
+|---|---|
+| bh_lm | 1 |
+| ebh | 170 |
+| elond | 185 |
+| esaffron | 174 |
+| elord | 187 |
+| bh_bns | 257 |
+| stopped_ebh | 346 |
+
+---
+
+### `mixed` jump size : différé
+
+**Décision :** `jump_sizes_in_sigma: [3, 5, mixed]` est retiré car `float("mixed")` crashe le runner. La taille mixte (distribution de taille de saut variable) nécessite un support dédié dans `_expand_grid()`.
+
+---
+
 ## Sessions précédentes
 
 *(Décisions des Étapes 1–5 non documentées ici — ajoutées rétrospectivement si besoin.)*
