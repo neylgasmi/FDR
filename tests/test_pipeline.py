@@ -158,6 +158,36 @@ def test_run_detector_all_algos_smoke():
         assert result.n_hypotheses == 80, f"{algo}: wrong n_hypotheses"
 
 
+def test_run_detector_hawkes_dense():
+    """hawkes_dense regime runs all 7 algos and produces more jumps than moderate."""
+    algos = ["ebh", "bh_lm", "bh_bns", "elond", "elord", "esaffron", "stopped_ebh"]
+    sim_hawkes = SimulatorConfig(regime="hawkes_dense", n_steps=200, dt_seconds=5.0)
+    est_cfg = EstimatorConfig(kind="medrv", window=50)
+
+    for algo in algos:
+        fdr_cfg = FDRConfig(algo=algo, alpha=0.1)
+        result = run_detector(sim_hawkes, est_cfg, fdr_cfg, seed=0)
+        assert isinstance(result.rejection_set, frozenset), f"{algo}: bad type"
+        assert result.n_hypotheses == 200
+
+    # Hawkes should produce strictly more jumps on average than moderate
+    n_hawkes = [
+        len(run_detector(sim_hawkes, est_cfg, FDRConfig(algo="elond"), seed=s).true_jumps)
+        for s in range(30)
+    ]
+    sim_mod = SimulatorConfig(regime="moderate", n_steps=200, dt_seconds=5.0)
+    n_mod = [
+        len(run_detector(sim_mod, est_cfg, FDRConfig(algo="elond"), seed=s).true_jumps)
+        for s in range(30)
+    ]
+    import numpy as np
+
+    assert np.mean(n_hawkes) > np.mean(n_mod), (
+        f"hawkes_dense should have more jumps than moderate: "
+        f"hawkes={np.mean(n_hawkes):.2f} mod={np.mean(n_mod):.2f}"
+    )
+
+
 def test_run_detector_result_traceable():
     """DetectorResult embeds full config for traceability."""
     sim_cfg = SimulatorConfig(regime="rare", n_steps=100, jump_size_sigma=5.0)
