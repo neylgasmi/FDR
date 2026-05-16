@@ -11,12 +11,14 @@ from ..simulate.base import SECS_PER_YEAR
 # Jump rate (jumps/year) per regime for n_steps=500, dt=5s.                   #
 # Expected jumps per path = lam * n_steps * dt / SECS_PER_YEAR               #
 #   rare:     ~0.64   moderate: ~2.12   dense: ~6.37                          #
+# Sentinel -1.0 = use HawkesSimulator (self-exciting, not Poisson)            #
 # --------------------------------------------------------------------------- #
 _REGIME_LAM: dict[str, float] = {
-    "heston_h0": 0.0,  # pure diffusion, no jumps
+    "heston_h0": 0.0,      # pure diffusion, no jumps
     "rare": 1_500.0,
     "moderate": 5_000.0,
     "dense": 15_000.0,
+    "hawkes_dense": -1.0,  # Hawkes self-exciting: mu=5k, alpha=88k, beta=0.03/s, m≈0.50
 }
 
 _ESTIMATOR_FNS: dict[str, object] = {}  # populated lazily on first import
@@ -141,6 +143,22 @@ def run_detector(
         mu_j = sim_config.jump_size_sigma * sigma_base * float(np.sqrt(dt_years))
         sigma_j = sim_config.jump_sigma_spread * abs(mu_j)
         simulator = MertonSimulator(heston=heston, lam=lam, mu_j=mu_j, sigma_j=sigma_j)
+    elif lam == -1.0:
+        # Hawkes self-exciting regime: same jump size as moderate, clustered arrivals
+        from ..simulate import HawkesSimulator
+
+        sigma_base = float(np.sqrt(sim_config.theta))
+        dt_years = sim_config.dt_seconds / SECS_PER_YEAR
+        mu_j = sim_config.jump_size_sigma * sigma_base * float(np.sqrt(dt_years))
+        sigma_j = sim_config.jump_sigma_spread * abs(mu_j)
+        simulator = HawkesSimulator(
+            heston=heston,
+            mu_per_year=5_000.0,
+            alpha_per_year=88_000.0,
+            beta_per_sec=0.03,
+            mu_j=mu_j,
+            sigma_j=sigma_j,
+        )
     else:
         simulator = heston
 
