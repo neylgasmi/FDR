@@ -170,6 +170,52 @@ delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 
 ---
 
+### wealth_fractions pour n=2000 : corrigé vers la recommandation e-GAI
+
+**Problème :** `[0.1, 0.25, 0.5, 0.75]` causent toutes l'alpha-death pour n=2000. Confirmé sur grid_medium (n=500, w1=0.1 → e-LOND/e-SAFFRON power≈0).
+
+**Correction :** `[0.0005, 0.0025, 0.005, 0.05]`
+- `1/n = 0.0005` : valeur canonique e-GAI (Zhang et al. 2025)
+- `5/n = 0.0025` : voisinage canonique
+- `0.005` : validé safe pour n=500 dans grid_quick (extrapolé pour n=2000)
+- `0.05` : illustre l'onset de l'alpha-death (pédagogique)
+
+---
+
+## Findings — Étape 8 (grid_medium, 16 mai 2026)
+
+### Résultat principal : BH viole le FDR à haute fréquence, indépendamment du régime
+
+**Observation :** Sur grid_medium (M=100, n=500), BH-BNS et BH-LM violent le critère FDR ≤ α + 2·SE **uniquement à dt=5s**, sur tous les régimes (rare, moderate, hawkes_dense) :
+
+| dt | FDR BH-BNS (tous régimes) | Violé (α=0.05) ? |
+|----|---|---|
+| 5s | 0.091–0.099 | Oui |
+| 60s | 0.009–0.045 | Non |
+| 300s | ≈0 | Non |
+
+Les e-values (ebh, elond, stopped_ebh) contrôlent le FDR à toutes les fréquences (FDR ≤ 0.033 ≤ α + 2·SE).
+
+**Interprétation :** La BV (bipower variation) sous-estime la volatilité spot à 5 secondes à cause de la corrélation négative induite par le bruit microstructure (effet bid-ask "bounce"). Cette sous-estimation gonfle la statistique BNS et crée de faux sauts. Références : Aït-Sahalia-Mykland-Zhang 2005, Bajgrowicz-Scaillet 2016.
+
+**Argument méthodologique central du projet :** les e-values sont valides sous dépendance arbitraire (leur validité ne suppose pas le PRDS de BH). La dépendance microstructure à haute fréquence est précisément ce qui rend le PRDS intenable pour BH. Les e-values offrent donc un meilleur trade-off sécurité/puissance à HF. Avec pré-moyennage (preavg_bv), la violation BH disparaîtrait — mais au coût d'une réduction de puissance substantielle.
+
+**Le clustering Hawkes ne spécifie pas la violation BH :** BH viole le FDR autant sur moderate (Poisson, pas de dépendance temporelle) que sur hawkes_dense. Le régime hawkes_dense sert néanmoins de test de robustesse : les e-values restent valides même sous clustering auto-excitant.
+
+**Puissance à dt=5s, α=0.05, hawkes_dense :**
+
+| algo | FDR | power | FDR contrôlé ? |
+|---|---|---|---|
+| BH-BNS | 0.091 | 0.423 | Non |
+| BH-LM | 0.091 | 0.423 | Non |
+| stopped_ebh | 0.017 | 0.303 | Oui |
+| ebh | 0.009 | 0.280 | Oui |
+| e-LOND | 0.000 | 0.204 | Oui |
+| e-LORD | ≈0 | ≈0 | Oui (alpha-death w1=0.1) |
+| e-SAFFRON | ≈0 | ≈0 | Oui (alpha-death w1=0.1) |
+
+---
+
 ## Sessions précédentes
 
 *(Décisions des Étapes 1–5 non documentées ici — ajoutées rétrospectivement si besoin.)*
