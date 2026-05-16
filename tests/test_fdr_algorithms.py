@@ -7,6 +7,7 @@ from efdr_jumps.fdr.baselines import bh
 from efdr_jumps.fdr.ebh import ebh
 from efdr_jumps.fdr.elond import elond
 from efdr_jumps.fdr.elord_esaffron import elord
+from efdr_jumps.fdr.stopped_ebh import stopped_ebh
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -344,3 +345,81 @@ def test_elord_fdr_validity_heston():
     fdr = np.mean(fdps)
     se = np.std(fdps) / np.sqrt(M)
     assert fdr <= alpha + 2 * se, f"e-LORD Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+
+
+# ---------------------------------------------------------------------------
+# Stopped e-BH: deterministic stream
+# ---------------------------------------------------------------------------
+
+
+def test_stopped_ebh_deterministic():
+    """E=(1,1,100,1,1), alpha=0.1 → stopped e-BH rejects only index 2.
+
+    At t=3: e-BH on (1,1,100), n=3, cutoff=3/(0.1*1)=30. E_3=100>=30 → reject.
+    At t=4,5: cutoffs 40 and 50 respectively. E=1 < both → no reject.
+    """
+    ev = [1.0, 1.0, 100.0, 1.0, 1.0]
+    result = list(stopped_ebh(ev, alpha=0.1))
+    assert result == [False, False, True, False, False], f"Got {result}"
+
+
+def test_stopped_ebh_empty():
+    assert list(stopped_ebh([], alpha=0.1)) == []
+
+
+def test_stopped_ebh_agrees_with_ebh_offline():
+    """On a finite stream, the final stopped e-BH step agrees with offline e-BH."""
+    ev = [1.0, 0.5, 200.0, 3.0, 1.0, 0.8, 150.0]
+    offline = ebh(ev, alpha=0.1)
+    online_last = list(stopped_ebh(ev, alpha=0.1))
+    # The last step of stopped e-BH re-runs e-BH on all n points, so
+    # the LAST decision must equal the offline result for the last element.
+    assert online_last[-1] == offline[-1]
+
+
+# ---------------------------------------------------------------------------
+# Stopped e-BH: self-validity under H0 — Pareto stream
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+def test_stopped_ebh_fdr_validity_pareto():
+    """FDR ≤ alpha + 2·SE on Pareto-1 e-values (M=1000 reps)."""
+    M = 1000
+    n = 500
+    alpha = 0.1
+    rng = np.random.default_rng(29)
+    fdps = []
+    for _ in range(M):
+        ev = _pareto_evalues(n, rng)
+        rej = list(stopped_ebh(ev, alpha=alpha))
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, (
+        f"stopped e-BH Pareto FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+    )
+
+
+@pytest.mark.slow
+def test_stopped_ebh_fdr_validity_heston():
+    """FDR ≤ alpha + 2·SE on Heston pure-diffusion e-values (M=1000 reps)."""
+    M = 1000
+    n = 200
+    dt_s = 5.0
+    alpha = 0.1
+    rng = np.random.default_rng(31)
+    fdps = []
+    for _ in range(M):
+        ev = _heston_evalues_h0(n, dt_s, rng)
+        rej = list(stopped_ebh(ev, alpha=alpha))
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, (
+        f"stopped e-BH Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+    )
