@@ -1,0 +1,8 @@
+frequencies_seconds: [5]
+jump_regimes: [moderate]
+jump_sizes_in_sigma: [5]
+alpha: [0.10]
+wealth_fractions: [0.25]
+M_replications: 50
+algorithms: [elond, eclosure]
+estimators: [medrv]
