@@ -85,6 +85,7 @@ def _run_task(
         "regime": sim_cfg.regime,
         "jump_size_sigma": sim_cfg.jump_size_sigma,
         "alpha": fdr_cfg.alpha,
+        "w1": fdr_cfg.w1,
         "seed": seed,
         "fdp": fdp_val,
         "power": pw_val,
