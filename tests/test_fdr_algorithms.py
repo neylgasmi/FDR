@@ -5,6 +5,7 @@ import pytest
 
 from efdr_jumps.fdr.baselines import bh
 from efdr_jumps.fdr.ebh import ebh
+from efdr_jumps.fdr.elond import elond
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -185,3 +186,84 @@ def test_bh_fdr_validity_uniform():
     fdr = np.mean(fdps)
     se = np.std(fdps) / np.sqrt(M)
     assert fdr <= alpha + 2 * se, f"BH uniform FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+
+
+# ---------------------------------------------------------------------------
+# e-LOND: deterministic stream
+# ---------------------------------------------------------------------------
+
+
+def test_elond_deterministic_no_rejection():
+    """E=(1,1,100,1,1), alpha=0.1 → e-LOND rejects ∅.
+
+    With C_JM=0.1571: alpha_3 = 0.1 * gamma(3) * 1 ≈ 0.00202, threshold ≈ 496.
+    E_3=100 < 496, so no rejection.
+    """
+    ev = [1.0, 1.0, 100.0, 1.0, 1.0]
+    result = list(elond(ev, alpha=0.1))
+    assert result == [False] * 5, f"Got {result}"
+
+
+def test_elond_large_evalues_rejected():
+    """Stream where E_1=1000 should be rejected (budget still high early)."""
+    result = list(elond([1000.0], alpha=0.1))
+    # alpha_1 = 0.1 * gamma(1) ≈ 0.00474; threshold ≈ 211. 1000 >= 211.
+    assert result == [True]
+
+
+def test_elond_rejection_boosts_budget():
+    """After a rejection at t=1, R=1 → alpha_2 = 0.1*gamma(2)*2; larger budget."""
+    from efdr_jumps.fdr.elond import _gamma
+
+    alpha = 0.1
+    alpha_2_no_rej = alpha * _gamma(2) * 1
+    alpha_2_with_rej = alpha * _gamma(2) * 2
+    assert alpha_2_with_rej > alpha_2_no_rej
+
+
+def test_elond_empty():
+    assert list(elond([], alpha=0.1)) == []
+
+
+# ---------------------------------------------------------------------------
+# e-LOND: self-validity under H0 — Pareto stream
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+def test_elond_fdr_validity_pareto():
+    """FDR ≤ alpha + 2·SE on Pareto-1 e-values (M=1000 reps)."""
+    M = 1000
+    n = 1000
+    alpha = 0.1
+    rng = np.random.default_rng(13)
+    fdps = []
+    for _ in range(M):
+        ev = _pareto_evalues(n, rng)
+        rej = list(elond(ev, alpha=alpha))
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, f"e-LOND Pareto FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+
+
+@pytest.mark.slow
+def test_elond_fdr_validity_heston():
+    """FDR ≤ alpha + 2·SE on Heston pure-diffusion e-values (M=1000 reps)."""
+    M = 1000
+    n = 500
+    dt_s = 5.0
+    alpha = 0.1
+    rng = np.random.default_rng(17)
+    fdps = []
+    for _ in range(M):
+        ev = _heston_evalues_h0(n, dt_s, rng)
+        rej = list(elond(ev, alpha=alpha))
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, f"e-LOND Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
