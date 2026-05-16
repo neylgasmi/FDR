@@ -219,7 +219,12 @@ def _compute_evalues(
     for i in range(n):
         sv = sigma_sq[i]
         if np.isnan(sv) or sv <= 0.0:
-            continue  # trivial e-value = 1
+            continue
+        # Skip until the window is fully filled: a partial window gives an
+        # unreliable (often severely downward-biased) sigma estimate, which
+        # makes E_i -> inf even under H0, violating e-value validity.
+        if i < est_config.window:
+            continue
         e_values[i] = construct_evalue(
             r_i=float(r[i]),
             sigma_hat_i=float(np.sqrt(sv)),

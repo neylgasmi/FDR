@@ -62,18 +62,58 @@ def bh_bns(
     log_price: np.ndarray,
     alpha: float,
     dt_seconds: float,
+    window: int = 100,
 ) -> list[bool]:
-    """BH applied to the BNS ratio statistic treated as a single global test.
+    """BH on per-return BNS-normalised Z-scores (per-return variant for BH-BNS).
 
-    The BNS statistic (Barndorff-Nielsen & Shephard 2006) tests the whole path
-    for jump presence. Here we return a path-level boolean: True for every
-    observation if the global H0 is rejected at level alpha, False otherwise.
-    This matches the way Bajgrowicz-Scaillet (2016) use BNS as a day-level filter.
+    For each return i, estimate the local spot variance from bipower variation
+    on the causal window r[max(0, i-window):i] (excludes r[i] itself), compute:
+        Z_i = r_i / sqrt(bv_i * dt / SECS_PER_YEAR)
+    then apply BH to the two-sided normal p-values.
+
+    Using BV (Barndorff-Nielsen & Shephard 2004) for normalisation follows the
+    spirit of Bajgrowicz-Scaillet (2016): jump-robust spot-variance estimation.
+    Causal exclusion of r[i] prevents contamination of the null distribution.
+    Positions where the window has fewer than 4 returns are mapped to p=1.
+    """
+    from ..estimators.bipower import bipower_variation
+    from ..simulate.base import SECS_PER_YEAR as _SY
+
+    r = np.diff(log_price)
+    n = len(r)
+    pv = np.ones(n)
+
+    for i in range(n):
+        if i < window:     # full window required: partial window gives unstable BV
+            continue
+        start = max(0, i - window)
+        # sub = log_price[start:i+1] → returns r[start:i] (excludes r[i])
+        sub = log_price[start : i + 1]
+        if len(sub) < 5:
+            continue
+        bv_annual = bipower_variation(sub, dt_seconds)
+        if bv_annual <= 0.0:
+            continue
+        sigma_sq_tick = bv_annual * (dt_seconds / _SY)
+        z = r[i] / float(np.sqrt(sigma_sq_tick))
+        pv[i] = 2.0 * float(stats.norm.sf(abs(z)))
+
+    return bh(pv, alpha)
+
+
+def bh_bns_global(
+    log_price: np.ndarray,
+    alpha: float,
+    dt_seconds: float,
+) -> bool:
+    """BNS ratio test applied to the full path: returns a single boolean.
+
+    Returns True if at least one jump is detected anywhere in the path.
+    Use for day-level filtering, not per-return comparison.
+    Reference: Bajgrowicz-Scaillet (2016).
     """
     from ..estimators.bipower import bns_ratio_stat
+    from scipy import stats as _stats
 
     z = bns_ratio_stat(log_price, dt_seconds)
-    p_global = float(stats.norm.sf(z))    # one-sided: large z → jump present
-    n = len(log_price) - 1
-    rejected_globally = p_global <= alpha
-    return [rejected_globally] * n
+    return float(_stats.norm.sf(z)) <= alpha
