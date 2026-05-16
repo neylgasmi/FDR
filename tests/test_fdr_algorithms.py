@@ -28,12 +28,16 @@ def _get_simulators():
 
 
 def _pareto_evalues(n: int, rng: np.random.Generator) -> np.ndarray:
-    """Independent calibrated Pareto-1 e-values: E = U^{-1}, U~Uniform(0,1).
+    """Valid calibrated e-values under H0 via Vovk-Wang (2021) kappa=0.5 calibrator.
 
-    These satisfy E[E] = 1 exactly under H0 and are independent.
+    E_i = 0.5 * U_i^{-1/2}  where U_i ~ Uniform(0,1).
+    E[E_i] = 0.5 * integral_0^1 u^{-1/2} du = 0.5 * 2 = 1  (valid).
+    Tail: P(E > x) = 0.25/x^2 (Pareto-type with shape 2).
+
+    Note: the naive 1/U construction has E[1/U] = ∞ and is NOT a valid e-value.
     """
     u = rng.uniform(0.0, 1.0, size=n)
-    return 1.0 / u
+    return 0.5 / np.sqrt(u)
 
 
 def _heston_evalues_h0(n: int, dt_s: float, rng: np.random.Generator) -> np.ndarray:
