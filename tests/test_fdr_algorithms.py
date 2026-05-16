@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+from efdr_jumps.fdr.baselines import bh
 from efdr_jumps.fdr.ebh import ebh
 
 # ---------------------------------------------------------------------------
@@ -129,3 +130,58 @@ def test_ebh_fdr_validity_heston():
     fdr = np.mean(fdps)
     se = np.std(fdps) / np.sqrt(M)
     assert fdr <= alpha + 2 * se, f"e-BH Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+
+
+# ---------------------------------------------------------------------------
+# BH baselines: deterministic stream
+# ---------------------------------------------------------------------------
+
+
+def test_bh_deterministic_reject_one():
+    """p=(0.9, 0.9, 0.001, 0.9, 0.9), alpha=0.1 → reject only index 2."""
+    pv = [0.9, 0.9, 0.001, 0.9, 0.9]
+    result = bh(pv, alpha=0.1)
+    # p_(1)=0.001 <= 0.1*1/5=0.02 → k*=1, cutoff=0.02. Only p[2]=0.001 <= 0.02.
+    assert result == [False, False, True, False, False], f"Got {result}"
+
+
+def test_bh_no_rejection():
+    """Uniform p-values=0.5, alpha=0.1 → no rejections."""
+    pv = [0.5] * 5
+    result = bh(pv, alpha=0.1)
+    assert result == [False] * 5
+
+
+def test_bh_all_reject():
+    """Very small p-values → all rejected."""
+    pv = [1e-6] * 10
+    result = bh(pv, alpha=0.1)
+    assert all(result)
+
+
+def test_bh_empty():
+    assert bh([], alpha=0.1) == []
+
+
+# ---------------------------------------------------------------------------
+# BH baselines: self-validity under H0 — uniform p-values
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+def test_bh_fdr_validity_uniform():
+    """FDR ≤ alpha + 2·SE on Uniform(0,1) p-values (M=1000 reps)."""
+    M = 1000
+    n = 1000
+    alpha = 0.1
+    rng = np.random.default_rng(11)
+    fdps = []
+    for _ in range(M):
+        pv = rng.uniform(0.0, 1.0, size=n)
+        rej = bh(pv, alpha=alpha)
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, f"BH uniform FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
