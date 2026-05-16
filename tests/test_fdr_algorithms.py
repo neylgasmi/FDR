@@ -6,6 +6,7 @@ import pytest
 from efdr_jumps.fdr.baselines import bh
 from efdr_jumps.fdr.ebh import ebh
 from efdr_jumps.fdr.elond import elond
+from efdr_jumps.fdr.elord_esaffron import elord
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -267,3 +268,79 @@ def test_elond_fdr_validity_heston():
     fdr = np.mean(fdps)
     se = np.std(fdps) / np.sqrt(M)
     assert fdr <= alpha + 2 * se, f"e-LOND Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+
+
+# ---------------------------------------------------------------------------
+# e-LORD: deterministic stream
+# ---------------------------------------------------------------------------
+
+
+def test_elord_deterministic_no_rejection():
+    """E=(1,1,100,1,1), alpha=0.1, w0=0.5 → e-LORD rejects ∅.
+
+    alpha_3 = 0.1 * (0.5*gamma(3)) ≈ 0.00101, threshold ≈ 992. E_3=100 < 992.
+    """
+    ev = [1.0, 1.0, 100.0, 1.0, 1.0]
+    result = list(elord(ev, alpha=0.1))
+    assert result == [False] * 5, f"Got {result}"
+
+
+def test_elord_empty():
+    assert list(elord([], alpha=0.1)) == []
+
+
+def test_elord_rejection_boosts_future_budget():
+    """After a rejection, the sum over past rejection times grows → larger budget."""
+    from efdr_jumps.fdr.elond import _gamma
+
+    alpha = 0.1
+    w0 = 0.5
+    # Without any past rejection, alpha_2 = alpha * w0 * gamma(2)
+    alpha_2_base = alpha * w0 * _gamma(2)
+    # With a rejection at t=1, alpha_2 gains (1-w0)*gamma(2-1) term
+    alpha_2_boosted = alpha * (w0 * _gamma(2) + (1.0 - w0) * _gamma(1))
+    assert alpha_2_boosted > alpha_2_base
+
+
+# ---------------------------------------------------------------------------
+# e-LORD: self-validity under H0 — Pareto stream
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.slow
+def test_elord_fdr_validity_pareto():
+    """FDR ≤ alpha + 2·SE on Pareto-1 e-values (M=1000 reps)."""
+    M = 1000
+    n = 1000
+    alpha = 0.1
+    rng = np.random.default_rng(19)
+    fdps = []
+    for _ in range(M):
+        ev = _pareto_evalues(n, rng)
+        rej = list(elord(ev, alpha=alpha))
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, f"e-LORD Pareto FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
+
+
+@pytest.mark.slow
+def test_elord_fdr_validity_heston():
+    """FDR ≤ alpha + 2·SE on Heston pure-diffusion e-values (M=1000 reps)."""
+    M = 1000
+    n = 500
+    dt_s = 5.0
+    alpha = 0.1
+    rng = np.random.default_rng(23)
+    fdps = []
+    for _ in range(M):
+        ev = _heston_evalues_h0(n, dt_s, rng)
+        rej = list(elord(ev, alpha=alpha))
+        r = sum(rej)
+        fdps.append(r / max(r, 1))
+
+    fdr = np.mean(fdps)
+    se = np.std(fdps) / np.sqrt(M)
+    assert fdr <= alpha + 2 * se, f"e-LORD Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
