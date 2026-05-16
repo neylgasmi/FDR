@@ -51,11 +51,12 @@ def _make_task(
     alpha: float,
     w1: float,
     seed: int,
+    n_steps: int = 500,
 ) -> tuple[SimulatorConfig, EstimatorConfig, FDRConfig, int]:
     sim_cfg = SimulatorConfig(
         regime=regime,
         dt_seconds=dt_seconds,
-        n_steps=500,
+        n_steps=n_steps,
         jump_size_sigma=jump_size_sigma,
     )
     est_cfg = EstimatorConfig(kind=estimator, window=50)
@@ -105,6 +106,7 @@ def _run_task(
 
 def _expand_grid(cfg: dict) -> list[tuple]:
     """Cartesian product of all grid dimensions, skipping inapplicable cells."""
+    n_steps = int(cfg.get("n_steps", 500))
     tasks = []
     for algo in cfg["algorithms"]:
         for estimator in cfg["estimators"]:
@@ -130,6 +132,7 @@ def _expand_grid(cfg: dict) -> list[tuple]:
                                             alpha=float(alpha),
                                             w1=float(w1),
                                             seed=seed,
+                                            n_steps=n_steps,
                                         )
                                     )
     return tasks
