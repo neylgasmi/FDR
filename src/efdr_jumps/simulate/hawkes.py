@@ -89,9 +89,7 @@ class HawkesSimulator(PathSimulator):
                 jump_indices.append(i + 1)
                 # Self-excite then decay
                 intensity = (
-                    self.mu_per_year
-                    + (intensity - self.mu_per_year) * decay
-                    + self.alpha_per_year
+                    self.mu_per_year + (intensity - self.mu_per_year) * decay + self.alpha_per_year
                 )
             else:
                 intensity = self.mu_per_year + (intensity - self.mu_per_year) * decay

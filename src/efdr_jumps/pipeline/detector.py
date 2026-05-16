@@ -14,7 +14,7 @@ from ..simulate.base import SECS_PER_YEAR
 # Sentinel -1.0 = use HawkesSimulator (self-exciting, not Poisson)            #
 # --------------------------------------------------------------------------- #
 _REGIME_LAM: dict[str, float] = {
-    "heston_h0": 0.0,      # pure diffusion, no jumps
+    "heston_h0": 0.0,  # pure diffusion, no jumps
     "rare": 1_500.0,
     "moderate": 5_000.0,
     "dense": 15_000.0,
