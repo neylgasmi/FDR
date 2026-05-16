@@ -5,7 +5,7 @@
 
 ---
 
-## Étape 6 — FDR algorithms (session du 16 mai 2026)
+## Étape 6 — FDR algorithms (sessions du 16 mai 2026)
 
 ### Constante C_JM du γ_t de Javanmard-Montanari
 
@@ -58,6 +58,61 @@
 **Décision :** `bh_bns()` retourne une liste de n booléens uniformes (tous True ou tous False selon que le test global BNS rejette H0 au niveau α). C'est cohérent avec l'usage dans Bajgrowicz-Scaillet 2016 où BNS sert de filtre jour-niveau.
 
 **Limitation :** BNS ne localise pas les sauts — il détecte seulement leur présence dans la fenêtre. Pour la localisation, utiliser BH-LM (Lee-Mykland par observation) ou les procédures e-value.
+
+---
+
+### e-LORD : réécriture complète (2ème session)
+
+**Problème :** La première implémentation de `elord` utilisait la formule γ_t de e-LOND (suite statique Javanmard-Montanari). C'était incorrect — le vrai e-LORD de Zhang et al. 2025 utilise le framework RAI (Risk Aversion Investing) avec une suite ω_t *dynamique*.
+
+**Formule correcte (RAI) :**
+```
+alpha_t = omega_t * rw_t * (R_{t-1} + 1)
+rw_{t+1} = rw_t * (1 - omega_t)
+omega_{t+1} = omega_t + w1 * phi^{t-R_t} * (1-delta_t) - w1 * psi^{R_t} * delta_t
+```
+
+**Paramètres recommandés (Zhang et al. 2025) :** w1 = O(1/T), phi = psi = 0.5.  
+**Comportement attendu :** avec w1=0.2 (agressif) sur E=(1,1,100,1,1), α=0.1, e-LORD rejette {3} (seuil ≈ 51). Avec w1=0.05 (défaut), rejette ∅.
+
+---
+
+### e-SAFFRON : formule exacte (Zhang et al. 2025, Algo 2)
+
+**Formule :**
+```
+rw_1 = alpha * (1 - lambda_cand)   # réduit par (1-lambda)
+rw_{t+1} = rw_t * (1 - omega_t * 1{E_t < 1/lambda})  # update seulement pour non-candidats
+alpha_t = omega_t * rw_t * (R_{t-1} + 1)
+delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
+```
+
+**Point subtil :** Le seuil 1/λ ne sert QUE pour le calcul du budget. La décision de rejet s'applique à TOUTES les hypothèses, candidates ou non. C'était incorrect dans le brief initial.
+
+**λ = 0.1** (pas 0.5 comme dans le SAFFRON p-value). Le papier recommande une valeur petite.
+
+**Intuition :** quand une e-value est forte (E_t ≥ 1/λ), on ne "charge" pas le budget — on garde le wealth pour les hypothèses futures. D'où la puissance supérieure à e-LORD.
+
+---
+
+### e-LOND-bar et donation e-LOND : différés
+
+**Décision :** e-LOND-bar (online closure, O(t²) via dynamic programming) et donation e-LOND (O(log t) via online compound e-values) sont différés à une session ultérieure dédiée, avec un brief basé sur la lecture PDF complète de Xu-Fischer-Ramdas 2026.
+
+**Raisons :**
+1. La formule closure DP n'est pas entièrement explicitée dans la portion HTML accessible.
+2. La notion de "γ-online compound e-value" (Section 2.2) nécessite un brief séparé.
+3. Mieux vaut valider l'intégration pipeline (Étape 7) avant d'ajouter des algorithmes supplémentaires.
+
+**Ce qui est implémenté à la fin de step-6 :** e-BH, BH-LM, BH-BNS, e-LOND, e-LORD, e-SAFFRON, stopped e-BH. Soit 7 algorithmes, tous validés (FDR ≤ α + 2·SE sur streams Pareto et Heston).
+
+---
+
+### Construction valide des e-values H0 pour les tests
+
+**Bug corrigé :** `E = 1/U` (U~Uniform) a E[E] = ∞ — pas un e-value valide sous H0. Conséquence : le test `test_stopped_ebh_fdr_validity_pareto` échouait avec FDR=0.481.
+
+**Correction :** `E = 0.5/sqrt(U)` — calibrateur Vovk-Wang 2021 avec κ=0.5. E[E] = 0.5 * ∫₀¹ u^{-1/2} du = 1. ✓ Queue Pareto de forme 2 : P(E > x) = 0.25/x² pour x ≥ 0.5.
 
 ---
 
