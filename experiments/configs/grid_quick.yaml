@@ -3,6 +3,6 @@ jump_regimes: [moderate]
 jump_sizes_in_sigma: [5]
 alpha: [0.05]
 wealth_fractions: [0.005]   # w1 = O(1/T) for T=500; 0.25 causes alpha-death in ~15 ticks
-M_replications: 50
+M_replications: 500
 algorithms: [ebh, bh_lm, bh_bns, elond, elord, esaffron, stopped_ebh]
 estimators: [medrv]

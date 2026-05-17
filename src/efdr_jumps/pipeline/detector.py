@@ -17,6 +17,7 @@ _REGIME_LAM: dict[str, float] = {
     "rare": 1_500.0,
     "moderate": 5_000.0,
     "dense": 15_000.0,
+    "hawkes_dense": 15_000.0,  # alias dense pour Merton approx
 }
 
 _ESTIMATOR_FNS: dict[str, object] = {}  # populated lazily on first import
@@ -167,11 +168,13 @@ def run_detector(
         rejection_set = frozenset(i for i, v in enumerate(rejects_list) if v)
 
     elif algo == "bh_bns":
-        from ..fdr import bh_bns
+        from ..fdr import bh_bns_global
 
-        rejects_list = bh_bns(log_price, alpha, sim_config.dt_seconds)
+        # Test global jour-niveau : même décision pour tous les retours
+        detected = bh_bns_global(log_price, alpha, sim_config.dt_seconds)
+        r = np.diff(log_price)
+        rejects_list = [detected] * len(r)
         rejection_set = frozenset(i for i, v in enumerate(rejects_list) if v)
-
     else:
         # E-value based procedures
         e_values = _compute_evalues(log_price, sim_config, est_config)
