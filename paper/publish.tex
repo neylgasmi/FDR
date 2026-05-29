@@ -1,9 +1,4 @@
-% rapport_efdr.tex — Sequential jump detection at high frequency
-% Compile with pdflatex or lualatex
-% Authors: Neyl Gasmi & Jules Brion — M1 MAEF 2025-2026
-% ============================================================
-
-\documentclass[11pt,a4paper]{article}
+\documentclass[11pt,a4paper,twocolumn]{article}
 
 % --- Encoding & language ---
 \usepackage[T1]{fontenc}
@@ -11,9 +6,9 @@
 \usepackage[english]{babel}
 
 % --- Page layout ---
-\usepackage[top=2.5cm,bottom=2.5cm,left=2.8cm,right=2.8cm]{geometry}
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.0cm,right=2.0cm,columnsep=0.8cm]{geometry}
 \usepackage{setspace}
-\setstretch{1.15}
+\setstretch{1.0}
 
 % --- Math ---
 \usepackage{amsmath,amssymb,amsthm,mathtools}
@@ -31,6 +26,7 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{float}
+\usepackage{stfloats}
 
 % --- Code ---
 \usepackage{listings}
@@ -81,39 +77,41 @@
 
 % ============================================================
 \title{%
-  \textbf{Sequential jump detection at high frequency\\
-  via e-values and online false-discovery-rate control}\\[0.5em]
-  {\large TER 2025-2026}
+  \textbf{E-values for sequential jump detection in HFT\\
+  with online FDR guarantees}\\
 }
 \author{%
   Neyl Gasmi \quad\textbullet\quad Jules Brion\\[0.5em]
   {\small Supervisor: Alain Celisse (SAMM, Universit\'e Paris~1)}\\
-  {\small M1 MAEF}
 }
 \date{May 20, 2026}
-% ============================================================
 
 \begin{document}
-\maketitle
 
+\twocolumn[
+\maketitle
 \begin{abstract}
 This report documents the \texttt{efdr-jumps} project, whose goal is to detect
 price discontinuities (\emph{jumps}) in high-frequency financial data in real
 time while simultaneously controlling the false discovery rate (\emph{FDR})
 in a sequential fashion.
 We construct \emph{e-values} from the jump-robust volatility estimator MedRV
-(Andersen-Dobrev-Schaumburg, 2012) and feed them into five online FDR
-procedures from the Ramdas school (e-BH, e-LOND, e-LORD, e-SAFFRON, stopped
-e-BH). Monte-Carlo experiments (\texttt{grid\_medium}, $M=100$ replications,
-$n=500$ steps, $3$ frequencies, $3$ jump regimes) show that the BH-based
-benchmarks (Yen, 2013; Bajgrowicz-Scaillet, 2016) violate the criterion
+(Andersen-Dobrev-Schaumburg, 2012) and feed them into five FDR procedures
+based on e-values from the Ramdas school: one offline (e-BH) and four online
+(e-LOND, e-LORD, e-SAFFRON, stopped e-BH). Monte-Carlo experiments
+(\texttt{grid\_medium}, $M=100$ replications, $n=500$ steps, $3$ frequencies,
+$3$ jump regimes) show that the BH-based benchmarks (Yen, 2013;
+Bajgrowicz-Scaillet, 2016) violate the criterion
 $\FDR \le \alpha + 2\,\mathrm{SE}$ at high frequency
 ($\dt t = 5\,\mathrm{s}$: observed FDR $=0.096$ against the threshold $0.094$ for
 $\alpha=0.05$), whereas e-value-based procedures control the FDR at all
-frequencies, with a power loss of $10$--$21$ percentage points.
+frequencies, with a power loss of $9$--$21$ percentage points.
 \end{abstract}
+\vspace{1em}
+]
 
 \tableofcontents
+
 \newpage
 
 % ============================================================
@@ -145,11 +143,10 @@ strategies.
 
 In discrete time, at each step $i = 1, \ldots, n$, one observes the return
 $r_i = X_{i\dt} - X_{(i-1)\dt}$. We wish to test simultaneously $n$ hypotheses:
-\begin{equation}
-  H_{0,i} : r_i \sim \mathcal{N}(0,\, \dt\,\sigma_i^2)
-  \quad\text{vs.}\quad
-  H_{1,i} : r_i = J_i + \varepsilon_i,\quad |J_i| \gg \sigma_i\sqrt{\dt}.
-\end{equation}
+\begin{align}
+  H_{0,i} &: r_i \sim \mathcal{N}(0,\, \dt\,\sigma_i^2),\nonumber\\
+  H_{1,i} &: r_i = J_i + \varepsilon_i,\quad |J_i| \gg \sigma_i\sqrt{\dt}.
+\end{align}
 with $n \sim 500$ for a trading day sampled at $5\,\mathrm{s}$. The additional
 constraint is \emph{online}: the decision on $H_{0,i}$ must be made at time
 $i$, without access to future observations.
@@ -168,8 +165,7 @@ enabling individual jump localization.
 
 \paragraph{Yen (2013) and Bajgrowicz-Scaillet (2016).}
 These works apply BH to Lee-Mykland p-values and to the BNS statistic
-respectively, providing the benchmarks reproduced in this project
-(\texttt{fdr/baselines.py}).
+respectively, providing the benchmarks reproduced in this project.
 
 \subsection{Core limitation: BH is invalid under HF dependence}
 
@@ -186,8 +182,8 @@ all regimes).
 
 \begin{enumerate}
   \item \textbf{E-value construction for HF jump detection}: integrated
-    likelihood ratio under a Gaussian prior $\mathcal{N}(0, \tau^2)$
-    (\texttt{evalues/construct.py}), valid under arbitrary dependence.
+    likelihood ratio under a Gaussian prior $\mathcal{N}(0, \tau^2)$,
+    valid under arbitrary dependence.
   \item \textbf{Implementation and validation of 7 FDR procedures}: e-BH,
     e-LOND, e-LORD, e-SAFFRON, stopped e-BH (e-values), and BH-LM, BH-BNS
     (baselines). 86 unit tests, all passing.
@@ -333,9 +329,8 @@ by another calibrator.
 For $\kappa \in (0,1)$, the map $p \mapsto \kappa\,p^{\kappa-1}$ is an
 admissible p-to-e calibrator: for any p-variable $P$, the random variable
 $E_\kappa = \kappa P^{\kappa-1}$ is an exact e-variable. In this project,
-$\kappa = 0.5$ serves as the baseline in validity tests
-(\texttt{test\_fdr\_algorithms.py}); the GROW
-construction is required to dominate this calibrator in e-power.
+$\kappa = 0.5$ serves as the baseline in validity tests;
+the GROW construction is required to dominate this calibrator in e-power.
 \end{remark}
 
 The motivation for using e-variables, beyond their richer calibration theory,
@@ -380,16 +375,14 @@ for the number of \emph{false discoveries} (rejected true nulls).
 
 \begin{definition}[Error metrics]
 \begin{align*}
-  \FDP &= \frac{F_D}{R_D \vee 1}
-    && \text{(false discovery proportion)},\\
-  \FDR &= \E^P[\FDP]
-    && \text{(false discovery rate)},\\
-  \FWER &= \Prob(F_D \geq 1)
-    && \text{(family-wise error rate)},\\
-  \mathrm{mFDR}(\eta) &= \frac{\E^P[F_D]}{\E^P[R_D] + \eta}
-    && \text{(marginal FDR)},
+  \FDP &= \frac{F_D}{R_D \vee 1},\quad
+  \FDR = \E^P[\FDP],\\
+  \FWER &= \Prob(F_D \geq 1),\quad
+  \mathrm{mFDR}(\eta) = \tfrac{\E^P[F_D]}{\E^P[R_D]+\eta},
 \end{align*}
-with the convention $0/0 = 0$ encoded by $R_D \vee 1$ in the denominator.
+where $\FDP$ is the false discovery proportion, $\FDR$ the false discovery
+rate, $\FWER$ the family-wise error rate, and $\mathrm{mFDR}$ the marginal
+FDR. Convention $0/0 = 0$ via $R_D \vee 1$.
 
 A procedure has \emph{FDR control at level $\alpha$} if $\FDR \leq \alpha$
 for every $P \in \mathcal{P}$, and similarly for FWER.
@@ -483,7 +476,7 @@ The seven procedures implemented and benchmarked in this project are
 summarised in Table~\ref{tab:procs}. Definitions and proofs are given in
 Section~\ref{sec:fdr}.
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Procedures implemented in \texttt{efdr-jumps}.}
 \label{tab:procs}
@@ -500,7 +493,7 @@ e-SAFFRON & \texttt{fdr/elord\_esaffron.py} & Yes & Arbitrary & Zhang et al.\ 20
 Stopped e-BH & \texttt{fdr/stopped\_ebh.py} & Yes & Markov / causal & Wang et al.\ 2025 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 
 % ============================================================
@@ -517,11 +510,11 @@ The instantaneous variance $V_t$ under the Heston model follows:
 \end{align}
 with $d\langle W^S, W^V \rangle_t = \rho\,dt$.
 
-\paragraph{Parameters} (\texttt{simulate/heston.py}, lines 89--106):
-\begin{equation}
-  \kappa = 2.0,\quad \theta = 0.04,\quad \xi = 0.5,\quad \rho = -0.7,\quad
-  V_0 = 0.04,\quad \mu = 0.
-\end{equation}
+\paragraph{Parameters.}
+\begin{align}
+  \kappa &= 2.0,\ \theta = 0.04,\ \xi = 0.5,\ \rho = {-}0.7,\nonumber\\
+  V_0 &= 0.04,\ \mu = 0.
+\end{align}
 Hence $\sigma_\infty = \sqrt{\theta} = 0.20$ (20\% annualised). The leverage
 effect $\rho = -0.7$ reproduces the observed price-volatility correlation.
 
@@ -535,14 +528,13 @@ $\psi = \Var[V_{t+\dt} \mid V_t] / (\E[V_{t+\dt} \mid V_t])^2$:
   \item $\psi > 1.5$: Dirac-exponential mixture.
 \end{itemize}
 This bifurcation guarantees $V_t \ge 0$ without ad-hoc correction.
-Implementation: \texttt{simulate/heston.py}, \texttt{\_qe\_kernel}.
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.85\textwidth]{notebooks/figures/section2a_heston_path}
+  \includegraphics[width=0.85\textwidth]{../notebooks/figures/section2a_heston_path}
   \caption{Simulated Heston log-price path with stochastic volatility ($\kappa=2$, $\theta=0.04$, $\xi=0.5$, $\rho=-0.7$). The QE scheme guarantees $V_t \ge 0$.}
   \label{fig:heston_path}
-\end{figure}
+\end{figure*}
 
 \subsection{Merton model (compound Poisson jumps)}
 
@@ -552,46 +544,39 @@ The log-price follows the dynamics with compound Poisson jump process:
 \end{equation}
 where $N_t \sim \text{Poisson}(\lambda)$, $J \sim \mathcal{N}(\mu_J, \sigma_J^2)$,
 and $\bar{k} = e^{\mu_J + \sigma_J^2/2} - 1$ corrects the drift so that $S_t$
-is a martingale (Andersen-Benzoni-Lund 2002 parameterisation,
-\texttt{simulate/merton.py}).
+is a martingale (Andersen-Benzoni-Lund 2002 parameterisation).
 
 \paragraph{Grid parameterisation.}
-Jump size is specified as a multiple of the local volatility
-(\texttt{pipeline/detector.py}):
-\begin{equation}
-  \mu_J = \texttt{jump\_size\_sigma} \times \sqrt{\theta} \times \sqrt{\dt},
-  \qquad
-  \sigma_J = 0.1 \times |\mu_J|.
-\end{equation}
+Jump size is specified as a multiple of the local volatility:
+\begin{align}
+  \mu_J &= \texttt{jump\_size\_sigma} \times \sqrt{\theta} \times \sqrt{\dt},\nonumber\\
+  \sigma_J &= 0.1 \times |\mu_J|.
+\end{align}
 For \texttt{jump\_size\_sigma} $= 5$ and $\dt t = 5\,\mathrm{s}$:
 $\mu_J \approx 9.21 \times 10^{-4}$ (in log-price), a jump of size
-$5\sigma\sqrt{\dt}$. Jump intensities per regime
-(\texttt{detector.py}):
-\begin{equation}
-  \lambda_\text{rare} = 1\,500/\mathrm{year} \approx 0.64\text{ jumps/path},
-  \quad
-  \lambda_\text{moderate} = 5\,000/\mathrm{year} \approx 2.12\text{ jumps/path}
-\end{equation}
+$5\sigma\sqrt{\dt}$. Jump intensities per regime:
+\begin{align}
+  \lambda_\text{rare} &= 1\,500/\mathrm{year} \approx 0.64\text{ j/path},\nonumber\\
+  \lambda_\text{moderate} &= 5\,000/\mathrm{year} \approx 2.12\text{ j/path}
+\end{align}
 for $n = 500$, $\dt t = 5\,\mathrm{s}$.
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.85\textwidth]{notebooks/figures/section2b_merton_hist}
+  \includegraphics[width=0.85\textwidth]{../notebooks/figures/section2b_merton_hist}
   \caption{Distribution of Merton jump sizes under the three regimes (rare, moderate, hawkes\_dense). Jump sizes are specified as multiples of the local volatility $\hat{\sigma}_i\sqrt{\dt}$.}
   \label{fig:merton_hist}
-\end{figure}
+\end{figure*}
 
 \subsection{Self-exciting Hawkes process}
 
-To model the temporal dependence of jumps, a discrete Hawkes process is used
-(\texttt{simulate/hawkes.py}, 104 l.):
+To model the temporal dependence of jumps, a discrete Hawkes process is used:
 \begin{equation}\label{eq:hawkes}
   \lambda_{n+1} = \mu + (\lambda_n - \mu)\,e^{-\beta\dt t} + \alpha\,N_n,
 \end{equation}
-where $N_n \in \{0,1\}$ and $p_n = 1 - e^{-\lambda_n \dt}$
-(\texttt{hawkes.py}, line 85).
+where $N_n \in \{0,1\}$ and $p_n = 1 - e^{-\lambda_n \dt}$.
 
-\paragraph{Parameters} (\texttt{simulate/hawkes.py}, lines 43--57):
+\paragraph{Parameters.}
 \begin{equation}
   \mu = 5\,000/\mathrm{year},\quad
   \alpha = 88\,000/\mathrm{year},\quad
@@ -599,7 +584,7 @@ where $N_n \in \{0,1\}$ and $p_n = 1 - e^{-\lambda_n \dt}$
 \end{equation}
 Branching ratio:
 $m = \alpha / (\beta \times \mathrm{Seconds(per/year)}) = 88\,000 / (0.03 \times 5\,896\,800) \approx 0.497 < 1$.
-An error is raised if $m \ge 1$ (\texttt{hawkes.py}, lines 59--65).
+Stationarity requires $m < 1$; an error is raised otherwise.
 
 \paragraph{Validation.}
 Over 30 seeds ($n = 200$, $\dt t = 5\,\mathrm{s}$): $3.8$ jumps/path vs.\
@@ -616,8 +601,7 @@ regime should be interpreted with care.
 $\mathrm{Seconds(per/year)} = 252 \times 6.5 \times 3600 = 5\,896\,800$.
 Returns $r_i$ are in natural log. $\dt$ is in years. The
 \texttt{jump\_indices} provided by the simulator are indices into the
-log-price array; the corresponding return index is $j - 1$
-(\texttt{detector.py} line 154).
+log-price array; the corresponding return index is $j - 1$.
 
 % ============================================================
 \section{Spot volatility estimation}
@@ -639,27 +623,25 @@ to zero when one of the returns carries an isolated jump.
 \subsection{MedRV and MinRV (ADS 2012)}
 
 \begin{definition}[MedRV, ADS 2012 eq.~12]
-\begin{equation}\label{eq:medrv}
-  \mathrm{MedRV}_n = c_\mathrm{med} \cdot \frac{n}{n-2}
-    \sum_{i=2}^{n-1} \mathrm{med}(|r_{i-1}|, |r_i|, |r_{i+1}|)^2,
-  \quad c_\mathrm{med} = \frac{\pi}{6 - 4\sqrt{3} + \pi} \approx 1.4191.
-\end{equation}
+\begin{align}\label{eq:medrv}
+  \mathrm{MedRV}_n &= c_\mathrm{med} \cdot \tfrac{n}{n-2}
+    \sum_{i=2}^{n-1} \mathrm{med}(|r_{i-1}|,|r_i|,|r_{i+1}|)^2,\nonumber\\
+  c_\mathrm{med} &= \tfrac{\pi}{6-4\sqrt{3}+\pi} \approx 1.4191.
+\end{align}
 \end{definition}
 
 \begin{definition}[MinRV, ADS 2012 eq.~13]
-\begin{equation}\label{eq:minrv}
-  \mathrm{MinRV}_n = c_\mathrm{min} \cdot \frac{n}{n-1}
-    \sum_{i=2}^{n} \min(|r_{i-1}|, |r_i|)^2,
-  \quad c_\mathrm{min} = \frac{\pi}{\pi - 2} \approx 2.7141.
-\end{equation}
+\begin{align}\label{eq:minrv}
+  \mathrm{MinRV}_n &= c_\mathrm{min} \cdot \tfrac{n}{n-1}
+    \sum_{i=2}^{n} \min(|r_{i-1}|,|r_i|)^2,\nonumber\\
+  c_\mathrm{min} &= \tfrac{\pi}{\pi-2} \approx 2.7141.
+\end{align}
 \end{definition}
-
-Implemented in \texttt{estimators/threshold.py} (43 l.).
 
 \subsection{Local spot volatility and causality condition}
 \label{sec:spot}
 
-\texttt{estimators/spot.py} (76 l.) computes $\hat{\sigma}^2(i)$ over a
+The spot variance estimator computes $\hat{\sigma}^2(i)$ over a
 window of $K$ returns \emph{strictly preceding} $i$:
 \begin{equation}\label{eq:window}
   \hat{\sigma}^2(i) = \hat{V}(\log S[\max(0, i-K) : i+1],\; \dt t).
@@ -668,23 +650,20 @@ The return $r_i$ is \textbf{never} included in the estimation window --- this
 is the \emph{causality condition} required for $\hat{\sigma}_i$ to be
 $\mathcal{F}_{i-1}$-measurable, ensuring $\E[E_i \mid \mathcal{F}_{i-1}] \le 1$.
 
-The window is $K = 50$ in the pipeline (\texttt{EstimatorConfig.window = 50},
-\texttt{detector.py} line 71). The first $K$ hypotheses are excluded from
+The window is $K = 50$. The first $K$ hypotheses are excluded from
 the test (incomplete window).
 
 
 \paragraph{Classical test statistics.}
 $L_i = r_i / (\hat{\sigma}_i\sqrt{\dt}) \approx \mathcal{N}(0,1)$ under
 $H_{0,i}$ (Lee-Mykland), two-sided p-value $P_i = 2\Prob(|Z| > |L_i|)$.
-Implemented in \texttt{estimators/bipower.py} via
-\texttt{lee\_mykland\_stat}.
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.85\textwidth]{notebooks/figures/section3a_vol_estimators}
+  \includegraphics[width=0.85\textwidth]{../notebooks/figures/section3a_vol_estimators}
   \caption{Comparison of spot volatility estimators (BV, MedRV, MinRV) on a simulated Heston path with Merton jumps. MedRV is the most robust to jump contamination.}
   \label{fig:vol_estimators}
-\end{figure}
+\end{figure*}
 
 
 % ============================================================
@@ -706,16 +685,16 @@ for an unknown jump size $J$.
 The GROW construction chooses $\pi(J) = \mathcal{N}(0, \tau^2)$ and defines:
 \begin{equation}\label{eq:evalue_integral}
   E_i = \int_{-\infty}^{+\infty}
-    \exp\!\left(\frac{J r_i}{v} - \frac{J^2}{2v}\right)
-    \cdot \frac{1}{\sqrt{2\pi\tau^2}}\exp\!\left(-\frac{J^2}{2\tau^2}\right) dJ.
+    \frac{e^{Jr_i/v - J^2/(2v)}}{\sqrt{2\pi\tau^2}}\,
+    e^{-J^2/(2\tau^2)}\, dJ.
 \end{equation}
 
 The derivation (Appendix~\ref{ann:grow}) gives the closed form:
 \begin{equation}\label{eq:evalue}
   \boxed{E_i = \sqrt{\frac{v}{v + \tau^2}} \cdot
-    \exp\!\left(\frac{r_i^2\,\tau^2}{2\,v\,(v + \tau^2)}\right)},
-  \quad v = \dt\,\hat{\sigma}_i^2,\quad \tau = 5\,\hat{\sigma}_i\sqrt{\dt}.
+    \exp\!\left(\frac{r_i^2\,\tau^2}{2v(v + \tau^2)}\right)},
 \end{equation}
+with $v = \dt\,\hat{\sigma}_i^2$ and $\tau = 5\,\hat{\sigma}_i\sqrt{\dt}$.
 
 \paragraph{Parameter \texttt{tau\_factor} $= 5$.}
 $\tau = 5\,\hat{\sigma}_i\sqrt{\dt}$ places mass on jumps of size
@@ -739,7 +718,7 @@ the window (Section~\ref{sec:spot}).
 
 \subsection{Empirical verification}
 
-Four unit tests (\texttt{test\_evalues\_validity.py}, 223 l.) verify:
+Four unit tests verify:
 \begin{enumerate}
   \item \textbf{H0/H1 separation}: distribution of $E_i$ concentrated near 1
     under pure diffusion, shifted toward large values under a jump.
@@ -751,22 +730,22 @@ Four unit tests (\texttt{test\_evalues\_validity.py}, 223 l.) verify:
     $M = 10\,000$.
 \end{enumerate}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{notebooks/figures/section4a_evalue_distributions}
+    \includegraphics[width=\textwidth]{../notebooks/figures/section4a_evalue_distributions}
     \caption{Distribution of $E_i$ under $H_0$ and $H_1$.}
     \label{fig:evalue_dist}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{notebooks/figures/section4b_epower_comparison}
+    \includegraphics[width=\textwidth]{../notebooks/figures/section4b_epower_comparison}
     \caption{E-power: GROW vs.\ Vovk-Wang calibrator ($\kappa=0.5$).}
     \label{fig:epower_cmp}
   \end{subfigure}
   \caption{Empirical validation of the GROW e-value construction. Left: under $H_0$ the distribution is concentrated near 1; under $H_1$ it is shifted to large values. Right: the GROW construction dominates the baseline calibrator in e-power across jump sizes.}
   \label{fig:evalues_validation}
-\end{figure}
+\end{figure*}
 
 
 
@@ -808,14 +787,13 @@ the $k$-th order statistic from the largest to the smallest. The e-BH
 procedure at level $\alpha \in (0,1)$ rejects the hypotheses corresponding to
 the largest $k^*$ e-values, where
 \[
-  k^* := \max\!\left\{k \in \{1, \ldots, K\} : \frac{k\,e_{[k]}}{K} \geq \frac{1}{\alpha}\right\}
-  \qquad (k^* := 0 \text{ if the set is empty}).
+  k^* := \max\!\left\{k : \frac{k\,e_{[k]}}{K} \geq \frac{1}{\alpha}\right\}
 \]
+($k^* := 0$ if the set is empty).
 \end{definition}
 
 If $k^* = 0$, no hypothesis is rejected. The
-complexity is $O(K \log K)$ for sorting, implemented in \texttt{fdr/ebh.py}
-(44 l.).
+complexity is $O(K \log K)$ for sorting.
 
 \begin{theorem}[Wang \& Ramdas 2022]\label{thm:ebh}
 For arbitrary dependence among the e-values, the e-BH procedure at level
@@ -842,32 +820,14 @@ e-testing procedure at level $\alpha$ has $\FDR \leq \alpha K_0 / K$ for
 arbitrary configurations of e-values, where $K_0 = |N|$.
 \end{proposition}
 
-\begin{proof}
-Let $D$ be a self-consistent e-testing procedure, and let
-$E = (E_1, \ldots, E_K)$ be the input e-variables. By self-consistency, for
-every $k \in D$, $E_k\,R_D \geq K/\alpha$, hence on the event $\{R_D \geq 1\}$:
-\[
-  \frac{\ind_{\{k \in D\}}}{R_D} \leq \frac{\alpha\,E_k}{K}.
-\]
-Therefore the FDP of $D$ satisfies
-\[
-  \frac{FD}{R_D \vee 1}
-    = \frac{|D(E) \cap N|}{R_D \vee 1}
-    \leq \sum_{k \in N} \frac{\ind_{\{k \in D(E)\}}\,\alpha\,E_k}{K}
-    \leq \sum_{k \in N} \frac{\alpha\,E_k}{K}.
-\]
-The first inequality applies self-consistency conditionally on $k \in D$.
-Taking expectations:
-\[
-  \E\!\left[\frac{FD}{R_D \vee 1}\right]
-    \leq \sum_{k \in N} \frac{\alpha\,\E[E_k]}{K}
-    \leq \frac{\alpha\,K_0}{K},
-\]
-since $\E[E_k] \leq 1$ for $k \in N$.
-
-The e-BH procedure is self-consistent by construction: for $k \in D$,
-$e_k \geq e_{[R_D]} \geq K/(\alpha R_D)$ by definition of $k^* = R_D$.
-\end{proof}
+\begin{proof}{\small
+By self-consistency, for every $k \in D$:
+$\ind_{\{k \in D\}}/R_D \leq \alpha E_k/K$.
+Summing over $N$: $F_D/(R_D\vee 1) \leq \sum_{k\in N}\alpha E_k/K$.
+Taking expectations and using $\E[E_k]\leq 1$:
+$\FDR \leq \alpha K_0/K$.
+Self-consistency of e-BH follows by construction: $e_k \geq e_{[R_D]} \geq K/(\alpha R_D)$.
+}\end{proof}
 
 Theorem~\ref{thm:ebh} follows by Proposition~\ref{prop:sc} applied to e-BH.
 
@@ -892,12 +852,11 @@ running quantity $\FDR(t)$.
 
 \begin{definition}[e-LOND, Xu \& Ramdas 2024]
 At step $t \geq 1$, set
-\begin{equation}\label{eq:elond}
-  \alpha_t = \alpha \cdot \gamma_t \cdot (R_{t-1} + 1),
-  \qquad
-  \gamma_t = C_\mathrm{JM} \cdot
+\begin{align}\label{eq:elond}
+  \alpha_t &= \alpha \cdot \gamma_t \cdot (R_{t-1} + 1),\nonumber\\
+  \gamma_t &= C_\mathrm{JM} \cdot
     \frac{\log\max(t,2)}{t \cdot \exp\!\sqrt{\log\max(t,2)}},
-\end{equation}
+\end{align}
 where $R_{t-1}$ is the number of rejections before time $t$ and
 $(\gamma_t)_{t \geq 1}$ is a user-chosen non-increasing non-negative sequence
 satisfying $\sum_{t \geq 1} \gamma_t \leq 1$ (the choice above is the
@@ -906,7 +865,7 @@ Javanmard-Montanari sequence). Reject $H_t$ iff $E_t \geq 1/\alpha_t$.
 
 \paragraph{Constant $C_\mathrm{JM} = 0.15708906$.}
 Verified by truncated summation up to $t = 10^6$:
-$\sum_{t=1}^{10^6} \gamma_t \approx 1.000000$ (\texttt{fdr/elond.py}).
+$\sum_{t=1}^{10^6} \gamma_t \approx 1.00000$.
 
 \paragraph{Interpretation.}
 The budget $\alpha \sum_t \gamma_t \leq \alpha$ is distributed over time. The
@@ -942,22 +901,12 @@ If $\E[FDP^*(t)] \leq \alpha$ for all $t \geq 1$, then $\FDR(t) \leq \alpha$
 for all $t \geq 1$.
 \end{proposition}
 
-\begin{proof}
-Bounding the indicator $\delta_j = \ind_{\{E_j \geq 1/\alpha_j\}}$ by
-$\alpha_j E_j$ (Markov), and using $R_t \vee 1 \geq R_{j-1} + 1$ for
-$j \leq t$ contributing to $R_t$:
-\begin{align*}
-\FDR(t) &= \E\!\left[\frac{\sum_{j \in H_0(t)} \delta_j}{R_t \vee 1}\right]
-  \leq \E\!\left[\sum_{j \in H_0(t)} \frac{\delta_j}{R_{j-1}+1}\right]\\
-  &= \E\!\left[\sum_{j \in H_0(t)} \frac{\ind_{\{E_j \geq 1/\alpha_j\}}}{R_{j-1}+1}\right]
-  \leq \E\!\left[\sum_{j \in H_0(t)} \frac{E_j\,\alpha_j}{R_{j-1}+1}\right]\\
-  &= \E\!\left[\sum_{j \in H_0(t)} \frac{\E[E_j \mid \mathcal{F}_{j-1}]\,\alpha_j}{R_{j-1}+1}\right]
-  \leq \E\!\left[\sum_{j \in H_0(t)} \frac{\alpha_j}{R_{j-1}+1}\right]\\
-  &= \E[FDP^*(t)] \leq \alpha,
-\end{align*}
-where we used $\alpha_j$ and $R_{j-1}$ are $\mathcal{F}_{j-1}$-measurable, so
-that $\E[E_j \mid \mathcal{F}_{j-1}] \leq 1$ pulls out.
-\end{proof}
+\begin{proof}{\small
+By Markov $\delta_j\leq\alpha_j E_j$ and $R_t\vee 1\geq R_{j-1}+1$, so
+$\FDR(t)\leq \E[\sum_{j\in H_0}\alpha_j E_j/(R_{j-1}+1)]
+\leq \E[\sum_{j\in H_0}\alpha_j/(R_{j-1}+1)] = \E[FDP^*(t)]\leq\alpha$,
+using $\E[E_j\mid\mathcal{F}_{j-1}]\leq 1$.
+}\end{proof}
 
 Since $H_0(t) \subseteq \{1, \ldots, t\}$ and all terms $\alpha_j/(R_{j-1}+1)
 \geq 0$,
@@ -969,11 +918,10 @@ almost surely, giving the FDR guarantee.
 \paragraph{Risk-aversion allocation rule.}
 The testing levels $\alpha_t$ are set via the \emph{Risk Aversion Investing}
 (RAI) rule of Zhang et al.\ (2025):
-\begin{equation}\label{eq:alphat}
-  \alpha_t = \omega_t \cdot rw_t \cdot (R_{t-1} + 1),
-  \qquad
-  rw_t = \alpha - \sum_{j=1}^{t-1} \frac{\alpha_j}{R_{j-1}+1},
-\end{equation}
+\begin{align}\label{eq:alphat}
+  \alpha_t &= \omega_t \cdot rw_t \cdot (R_{t-1} + 1),\nonumber\\
+  rw_t &= \alpha - \sum_{j=1}^{t-1} \frac{\alpha_j}{R_{j-1}+1},
+\end{align}
 where $rw_t$ is the \emph{remaining wealth} and $(\omega_t)_{t \in
 \mathbb{N}} \in (0,1)$ governs the fraction of remaining wealth allocated to
 the current test. Initial wealth $rw_1 = \alpha$, $\alpha_1 = \alpha
@@ -984,7 +932,7 @@ the current test. Initial wealth $rw_1 = \alpha$, $\alpha_1 = \alpha
 with user-chosen parameters $\phi, \psi \in [0, 0.5]$ ensuring $\omega_t \in
 (0,1)$.
 
-\begin{algorithm}
+\begin{algorithm*}
 \caption{e-LORD}
 \label{alg:elord}
 \begin{algorithmic}[1]
@@ -1003,7 +951,7 @@ with user-chosen parameters $\phi, \psi \in [0, 0.5]$ ensuring $\omega_t \in
     \State Update $\omega_{t+1}$ via \eqref{eq:omegat}
 \EndFor
 \end{algorithmic}
-\end{algorithm}
+\end{algorithm*}
 
 \begin{remark}[e-LOND as a special case]
 Setting $\gamma_t = \omega_t \prod_{j=1}^{t-1}(1 - \omega_j)$ in e-LOND
@@ -1046,24 +994,14 @@ predictable sequence in $(0,1)$. Then for every $t \geq 1$:
 \]
 \end{theorem}
 
-\begin{proof}
-\begin{align*}
-\E[\widehat{FDP}_{\text{e-SAFFRON}}(t)]
-  &= \sum_{j=1}^{t} \E\!\left[\frac{\alpha_j}{R_{j-1}+1} \cdot \frac{\ind_{\{e_j < 1/\lambda_j\}}}{1 - \lambda_j}\right]\\
-  &\geq \sum_{j \in H_0(t)} \E\!\left[\frac{\alpha_j}{R_{j-1}+1}
-      \cdot \frac{\E[\ind_{\{e_j < 1/\lambda_j\}} \mid \mathcal{F}_{j-1}]}{1 - \lambda_j}\right].
-\end{align*}
-Since $E_j$ is an e-variable and $\lambda_j$ is $\mathcal{F}_{j-1}$-measurable,
-Markov gives $\Prob(E_j \geq 1/\lambda_j \mid \mathcal{F}_{j-1}) \leq \lambda_j$
-under $H_{0,j}$, hence
-$\Prob(E_j < 1/\lambda_j \mid \mathcal{F}_{j-1}) \geq 1 - \lambda_j$.
-Therefore
-\[
-  \E[\widehat{FDP}_{\text{e-SAFFRON}}(t)]
-    \geq \sum_{j \in H_0(t)} \E\!\left[\frac{\alpha_j}{R_{j-1}+1}\right]
-    = \E[FDP^*(t)].
-\]
-\end{proof}
+\begin{proof}{\small
+Since $\lambda_j$ is $\mathcal{F}_{j-1}$-measurable, Markov gives
+$\Prob(E_j < 1/\lambda_j\mid\mathcal{F}_{j-1})\geq 1-\lambda_j$ under $H_{0,j}$.
+Restricting the sum to $j\in H_0(t)$ and applying this bound:
+$\E[\widehat{FDP}_{\text{e-SAFFRON}}(t)]
+\geq \sum_{j\in H_0(t)}\E[\alpha_j/(R_{j-1}+1)]
+= \E[FDP^*(t)]$.
+}\end{proof}
 
 Combining with Proposition~\ref{prop:oracle-fdr}, e-SAFFRON controls
 $\FDR \leq \alpha$ at every $t$.
@@ -1079,7 +1017,7 @@ with $\omega_t$ updated by~\eqref{eq:omegat}. The rejection rule remains
 $\delta_t = \ind_{\{e_t \geq 1/\alpha_t\}}$.
 
 
-\begin{algorithm}
+\begin{algorithm*}
 \caption{e-SAFFRON}
 \label{alg:esaffron}
 \begin{algorithmic}[1]
@@ -1098,7 +1036,7 @@ $\delta_t = \ind_{\{e_t \geq 1/\alpha_t\}}$.
     \State Update $\omega_{t+1}$ via \eqref{eq:omegat}
 \EndFor
 \end{algorithmic}
-\end{algorithm}
+\end{algorithm*}
 
 Setting $\lambda = 0$ recovers e-LORD: e-SAFFRON is therefore the adaptive
 counterpart of e-LORD.
@@ -1169,8 +1107,8 @@ Consider observations $Z_n = (X_n, Y_n)$ where $X_n \in \mathcal{X}$ is a
 covariate and $Y_n = (Y_n^1, \ldots, Y_n^G) \in \mathcal{Y}^1 \times \cdots
 \times \mathcal{Y}^G$ a response vector. The Markovian assumption is
 \[
-  Y_n \perp (X_1, \ldots, X_{n-1};\, Y_1, \ldots, Y_{n-1}) \mid X_n
-  \qquad \forall n \geq 2.
+  Y_n \perp (X_1,\ldots,X_{n-1};Y_1,\ldots,Y_{n-1}) \mid X_n
+  \quad \forall\, n \geq 2.
 \]
 Given the current covariate $X_n$, $Y_n$ is independent of the past, with
 arbitrary cross-component dependence in $Y_n$ allowed.
@@ -1190,21 +1128,18 @@ $O(t \log t)$ per step.
 \subsection{Baselines BH-LM and BH-BNS}
 
 \paragraph{BH-LM.}
-\texttt{bh\_lee\_mykland} (\texttt{baselines.py} lines 39--58) computes
-$L_i = r_i / (\hat{\sigma}_i\sqrt{\dt})$, the two-sided p-value
-$P_i = 2\Prob(|Z| > |L_i|)$, then applies BH. Decisions are made per
-hypothesis.
+BH-LM computes $L_i = r_i / (\hat{\sigma}_i\sqrt{\dt})$, the two-sided
+p-value $P_i = 2\Prob(|Z| > |L_i|)$, then applies BH. Decisions are made
+per hypothesis.
 
 \paragraph{BH-BNS.}
-In \texttt{detector.py} (lines 170--177), BH-BNS calls
-\texttt{bh\_bns\_global} (global BNS ratio test, \texttt{baselines.py}
-lines 104--120) and duplicates its result across all hypotheses: if the
-global test rejects, all returns are flagged as jumps; otherwise none. This
-matches the BS 2016 usage (BNS as a day-level filter).
+BH-BNS applies a global BNS ratio test and duplicates its result across all
+hypotheses: if the global test rejects, all returns are flagged as jumps;
+otherwise none. This matches the BS 2016 usage (BNS as a day-level filter).
 
 \subsection{Synthetic comparison}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Summary: guarantees, assumptions, complexity.}
 \label{tab:procs_detail}
@@ -1221,7 +1156,7 @@ BH-LM & $\FDR \le \alpha$ & PRDS & $K_\mathrm{win}$ & $O(n\log n)$ \\
 BH-BNS & $\FDR \le \alpha$ & PRDS & --- & $O(n)$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 
 % ============================================================
@@ -1239,17 +1174,12 @@ BH-BNS & $\FDR \le \alpha$ & PRDS & --- & $O(n)$ \\
 
 \subsection{Metrics}
 
-\[
-  \FDP = \frac{|\mathcal{R} \cap \mathcal{H}_0|}{\max(|\mathcal{R}|, 1)},
-  \quad
-  \text{Power} = \frac{|\mathcal{R} \cap \mathcal{H}_1|}{\max(|\mathcal{H}_1|, 1)},
-\]
-\[
-  \text{F1} = \frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}},
-  \quad
-  \text{Delay} = \frac{1}{|\mathcal{R} \cap \mathcal{H}_1|}
-    \sum_{i \in \mathcal{R} \cap \mathcal{H}_1}(t_i - t_{i,\text{true}}).
-\]
+\begin{align*}
+  \FDP &= \tfrac{|\mathcal{R}\cap\mathcal{H}_0|}{\max(|\mathcal{R}|,1)}, &
+  \text{Power} &= \tfrac{|\mathcal{R}\cap\mathcal{H}_1|}{\max(|\mathcal{H}_1|,1)},\\
+  \text{F1} &= \tfrac{2\,\text{Prec}\cdot\text{Rec}}{\text{Prec}+\text{Rec}},\\
+  \text{Delay} &= \tfrac{\sum_{i\in\mathcal{R}\cap\mathcal{H}_1}(t_i-t_{i,\text{true}})}{|\mathcal{R}\cap\mathcal{H}_1|}.
+\end{align*}
 
 \paragraph{Reading the metrics.}
 Each hypothesis $H_{0,i}$ targets a single tick $i$; the simulator provides
@@ -1283,7 +1213,7 @@ quantities complement FDR and power:
 
 \textbf{Source}: \texttt{results/grid\_medium.parquet} 
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Parameters of the \texttt{grid\_medium}.}
 \label{tab:grid}
@@ -1304,7 +1234,7 @@ Total tasks & 32\,400 \\
 Duration & $\approx 7\,\mathrm{min}$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \paragraph{FDR violation convention.}
 For $\alpha = 0.05$, $M = 100$:
@@ -1313,7 +1243,7 @@ Violation threshold: $\alpha + 2\,\mathrm{SE} \approx 0.094$.
 
 \subsection{Result 1: BH's FDR violation at high frequency}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Empirical FDR per algorithm $\times$ frequency ($\alpha = 0.05$, all regimes, $M = 100$, $n = 500$). Source: \texttt{grid\_medium.parquet}.}
 \label{tab:fdr_freq}
@@ -1332,27 +1262,36 @@ e-SAFFRON ($\omega_1 = 0.1$) & 0.000 & 0.000 & 0.000 & \textcolor{teal}{No} (alp
 \multicolumn{4}{l}{\textit{Violation threshold}: $0.094 = \alpha + 2\,\mathrm{SE}$} & \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \paragraph{Interpretation.}
-BH's FDR violation at $5\,\mathrm{s}$ results from BV's bias under dense
-jumps: BV under-estimates the spot volatility when products
-$|r_{i-1}||r_i|$ are contaminated, inflating the normalised statistic and
-producing false positives. This mechanism is structural --- it concerns the
-BV normalisation, not additive noise.
+The violation operates through two distinct channels. For BH-BNS, the BNS
+statistic is built on bipower variation, which is downward-biased whenever two
+consecutive returns both carry a jump --- an event that becomes frequent under
+the moderate and hawkes\_dense regimes at $5\,\mathrm{s}$. The resulting
+under-estimation of integrated variance inflates the BNS ratio and triggers
+spurious detections. For BH-LM, the mechanism is more subtle: although MedRV
+is markedly more jump-robust than BV, the normalised statistics
+$L_i = r_i / (\hat{\sigma}_i\sqrt{\dt})$ are computed over overlapping windows
+of $K = 50$ returns. At $5\,\mathrm{s}$, these windows share a large fraction
+of their returns, and under dense jump clustering the dependence structure of
+the $L_i$ violates the PRDS condition that BH requires to guarantee
+$\FDR \le \alpha$. In both cases the violation is structural: it does not
+disappear with larger sample size, only with a stronger theoretical guarantee
+(e.g.\ arbitrary-dependence e-value procedures).
 
 Figure~\ref{fig:fdr_freq} illustrates the evolution of empirical FDR by
 frequency for $\alpha = 0.05$ and $\alpha = 0.10$.
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig1_fdr_vs_freq_alpha5.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig1_fdr_vs_freq_alpha5.png}
     \caption{$\alpha = 0.05$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig1_fdr_vs_freq_alpha10.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig1_fdr_vs_freq_alpha10.png}
     \caption{$\alpha = 0.10$}
   \end{subfigure}
   \caption{Empirical FDR vs.\ sampling frequency, by algorithm and regime
@@ -1360,7 +1299,7 @@ frequency for $\alpha = 0.05$ and $\alpha = 0.10$.
   $\alpha$. BH-LM and BH-BNS exceed $\alpha$ at $5\,\mathrm{s}$ in all
   regimes.}
   \label{fig:fdr_freq}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 2: e-value-based FDR control at all frequencies}
 
@@ -1372,7 +1311,7 @@ Hawkes jumps.
 
 \subsection{Result 3: power-safety trade-off}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Power per algorithm $\times$ frequency ($\alpha = 0.05$, all regimes). Source: \texttt{grid\_medium.parquet}.}
 \label{tab:power_freq}
@@ -1388,40 +1327,40 @@ e-LORD ($\omega_1 = 0.1$) & 0.002 & 0.001 & 0.000 \\
 e-SAFFRON ($\omega_1 = 0.1$) & 0.002 & 0.001 & 0.000 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 Among procedures that actually control the FDR, \textbf{stopped e-BH} is
 the best compromise (power $0.349$ vs.\ e-BH $0.326$, e-LOND $0.235$). The
 loss relative to BH (uncontrolled) is $9$--$21$ pp at $5\,\mathrm{s}$.
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig2_power_vs_freq_alpha5.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig2_power_vs_freq_alpha5.png}
     \caption{$\alpha = 0.05$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig2_power_vs_freq_alpha10.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig2_power_vs_freq_alpha10.png}
     \caption{$\alpha = 0.10$}
   \end{subfigure}
   \caption{Power vs.\ sampling frequency by algorithm and regime. Stopped
   e-BH dominates e-BH and e-LOND at all frequencies among valid procedures.
   e-LORD/e-SAFFRON with $\omega_1 = 0.1$: alpha-death at $5\,\mathrm{s}$.}
   \label{fig:power_freq}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 4: FDR-power frontier}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig3_tradeoff_alpha5.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig3_tradeoff_alpha5.png}
     \caption{$\alpha = 0.05$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig3_tradeoff_alpha10.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig3_tradeoff_alpha10.png}
     \caption{$\alpha = 0.10$}
   \end{subfigure}
   \caption{Scatter of empirical FDR vs.\ power, by algorithm and regime.
@@ -1429,20 +1368,20 @@ loss relative to BH (uncontrolled) is $9$--$21$ pp at $5\,\mathrm{s}$.
   to the right (uncontrolled FDR, high power); e-value procedures sit to
   the left (controlled FDR, lower power).}
   \label{fig:tradeoff}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 5: Hawkes intensity and jump clustering}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.85\textwidth]{notebooks/figures/section7a_hawkes_intensity}
+  \includegraphics[width=0.85\textwidth]{../notebooks/figures/section7a_hawkes_intensity}
   \caption{Simulated Hawkes intensity $\lambda_t$ and corresponding jump arrivals on a single path ($\Delta t = 5\,\mathrm{s}$, hawkes\_dense regime). Bursts of intensity reflect the self-exciting mechanism: each jump raises $\lambda_t$, generating temporal clustering.}
   \label{fig:hawkes_intensity}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 6: detailed Hawkes dense regime}
 
-\begin{table}[H]
+\begin{table*}[t]
 \centering
 \caption{Detailed results: hawkes\_dense, $\Delta t = 5\,\mathrm{s}$, $\alpha = 0.05$, $M = 100$.}
 \label{tab:hawkes}
@@ -1459,7 +1398,7 @@ e-LORD ($\omega_1 = 0.1$) & 0.000 & 0.001 & 0.151 & \textcolor{teal}{Yes} (alpha
 e-SAFFRON ($\omega_1 = 0.1$) & 0.000 & 0.001 & 0.151 & \textcolor{teal}{Yes} (alpha-death) \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 BH-BNS at $0.091$ is below the violation threshold for hawkes\_dense alone,
 but exceeds $0.094$ once aggregated across all regimes ($0.096$). The
@@ -1468,34 +1407,34 @@ violation is inherent to the $5\,\mathrm{s}$ frequency, not to clustering.
 
 \subsection{Result 7: effect of jump size}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig5_jump_size_alpha5.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig5_jump_size_alpha5.png}
     \caption{$\alpha = 0.05$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig5_jump_size_alpha10.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig5_jump_size_alpha10.png}
     \caption{$\alpha = 0.10$}
   \end{subfigure}
   \caption{FDR and power as a function of jump size ($3\sigma$ vs.\ $5\sigma$).
   Power increases with jump size for all procedures. BH's FDR remains above
   $\alpha$ irrespective of jump size at $5\,\mathrm{s}$.}
   \label{fig:jumpsize}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 8: heatmap view of aggregated performance}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig4_heatmap_alpha5.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig4_heatmap_alpha5.png}
     \caption{$\alpha = 0.05$}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{results/figures/fig4_heatmap_alpha10.png}
+    \includegraphics[width=\textwidth]{../results/figures/fig4_heatmap_alpha10.png}
     \caption{$\alpha = 0.10$}
   \end{subfigure}
   \caption{Heatmap of FDR, power, and F1 metrics by algorithm (aggregated
@@ -1503,33 +1442,33 @@ violation is inherent to the $5\,\mathrm{s}$ frequency, not to clustering.
   BH has the highest power but also the highest FDR. Stopped e-BH offers
   the best F1 among valid procedures.}
   \label{fig:heatmap}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 9: BH violation and FDR --- walkthrough views}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=0.85\textwidth]{notebooks/figures/section7b3_bh_violation}
+  \includegraphics[width=0.85\textwidth]{../notebooks/figures/section7b3_bh_violation}
   \caption{Zoom on the BH FDR violation at $\Delta t = 5\,\mathrm{s}$: observed FDR per regime and jump size. The dashed line marks $\alpha + 2\,\mathrm{SE} = 0.094$. BH-LM and BH-BNS exceed the threshold in the moderate and hawkes\_dense regimes.}
   \label{fig:bh_violation}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[H]
+\begin{figure*}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{notebooks/figures/section7b1_fdr_by_freq}
+    \includegraphics[width=\textwidth]{../notebooks/figures/section7b1_fdr_by_freq}
     \caption{FDR by frequency and procedure.}
     \label{fig:fdr_freq_nb}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{notebooks/figures/section7b2_power_heatmap}
+    \includegraphics[width=\textwidth]{../notebooks/figures/section7b2_power_heatmap}
     \caption{Power heatmap by regime and frequency.}
     \label{fig:power_heatmap_nb}
   \end{subfigure}
   \caption{Additional walkthrough views from \texttt{00\_project\_walkthrough.ipynb}, complementing Figures~\ref{fig:fdr_freq} and~\ref{fig:heatmap}.}
   \label{fig:nb_additional}
-\end{figure}
+\end{figure*}
 
 \subsection{Result 10: alpha-death and parameter $\omega_1$}
 
@@ -1544,7 +1483,7 @@ properly calibrated values would restore power.
 
 \subsection{Result 11: computational performance}
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Wall-clock per algorithm for $n = 2000$.}
 \label{tab:wallclock}
@@ -1656,8 +1595,8 @@ Starting from~\eqref{eq:evalue_integral}, with $v = \dt\hat{\sigma}^2$ and
 $\pi(J) = \mathcal{N}(0, \tau^2)$:
 \[
   E_i = \int_{-\infty}^{+\infty}
-    \exp\!\left(\frac{Jr_i}{v} - \frac{J^2}{2v}\right)
-    \cdot \frac{1}{\sqrt{2\pi\tau^2}}\exp\!\left(-\frac{J^2}{2\tau^2}\right) dJ.
+    \frac{e^{Jr_i/v - J^2/(2v)}}{\sqrt{2\pi\tau^2}}\,
+    e^{-J^2/(2\tau^2)}\, dJ.
 \]
 
 Grouping terms in $J$:
@@ -1667,10 +1606,10 @@ Grouping terms in $J$:
 \]
 with $s^2 = v\tau^2/(v+\tau^2)$ and $\mu^* = r_i\tau^2/(v+\tau^2)$.
 
-The Gaussian integral gives $\int \frac{1}{\sqrt{2\pi\tau^2}} e^{-(J-\mu^*)^2/(2s^2)} dJ = s/\tau$, hence:
+The Gaussian integral gives $s/\tau$, hence:
 \[
-  E_i = \frac{s}{\tau} \exp\!\left(\frac{\mu^{*2}}{2s^2}\right)
-  = \sqrt{\frac{v}{v+\tau^2}} \cdot \exp\!\left(\frac{r_i^2\tau^2}{2v(v+\tau^2)}\right).
+  E_i = \tfrac{s}{\tau}\, e^{\mu^{*2}/(2s^2)}
+  = \sqrt{\tfrac{v}{v+\tau^2}} \cdot e^{r_i^2\tau^2/[2v(v+\tau^2)]}.
 \]
 This is exactly the expression implemented in \texttt{evalues/construct.py}
 (lines 40--49).
@@ -1678,11 +1617,11 @@ This is exactly the expression implemented in \texttt{evalues/construct.py}
 \section{Javanmard-Montanari sequence for e-LOND}
 \label{ann:jm}
 
-\[
-  \gamma_t = C_\mathrm{JM} \cdot \frac{\log\max(t,2)}{t \cdot e^{\sqrt{\log\max(t,2)}}},
-  \qquad C_\mathrm{JM} = 0.15708906,
-  \qquad \sum_{t=1}^{10^6} \gamma_t \approx 1.0000.
-\]
+\begin{align*}
+  \gamma_t &= C_\mathrm{JM} \cdot \frac{\log\max(t,2)}{t \cdot e^{\sqrt{\log\max(t,2)}}},\\
+  C_\mathrm{JM} &= 0.15708906,\quad
+  \sum_{t=1}^{10^6} \gamma_t \approx 1.0000.
+\end{align*}
 
 The normalisation $\sum_{t=1}^\infty \gamma_t = 1$ is the budget condition
 that ensures FDR control. $C_\mathrm{JM}$ is computed numerically by

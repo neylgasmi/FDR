@@ -35,3 +35,17 @@ Thumbs.db
 .idea/
 grid_main.log
 grid_main.pid
+
+# LaTeX build artifacts
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.synctex(busy)
+*.blg
+*.bbl
+*.bcf
+*.run.xml

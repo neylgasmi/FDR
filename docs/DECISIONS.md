@@ -1,11 +1,10 @@
 # DECISIONS.md — Choix techniques documentés
 
 > Ce fichier trace les décisions non-évidentes prises pendant l'implémentation.
-> Mettre à jour à chaque session.
 
 ---
 
-## Étape 6 — FDR algorithms (sessions du 16 mai 2026)
+## Étape 6 — FDR algorithms (16 mai 2026)
 
 ### Constante C_JM du γ_t de Javanmard-Montanari
 
@@ -13,7 +12,7 @@
 
 **Valeur utilisée :** `C = 0.15708906` (vérifiée par sommation tronquée à t=10^6 : Σ γ_t ≈ 1.000000).
 
-**Contexte :** Le brief de session indiquait C ≈ 0.0722. Le calcul numérique donne C ≈ 0.1571 pour cette formule exacte. L'erreur dans le brief est probablement une confusion avec une variante de la formule (e.g. sans le `log` au numérateur, ou avec un argument différent dans l'exponentielle). Le résultat qualitatif ne change pas : e-LOND et e-LORD rejettent ∅ sur le stream déterministe (1,1,100,1,1) α=0.1 quelle que soit la valeur de C, car le seuil reste largement > 100.
+**Contexte :** Une valeur initiale C ≈ 0.0722 avait été considérée, mais le calcul numérique donne C ≈ 0.1571 pour cette formule exacte. L'écart provient d'une confusion avec une variante de la formule (sans le `log` au numérateur, ou avec un argument différent dans l'exponentielle). Le résultat qualitatif ne change pas : e-LOND et e-LORD rejettent ∅ sur le stream déterministe (1,1,100,1,1) α=0.1 quelle que soit la valeur de C, car le seuil reste largement > 100.
 
 **Implémentation :** constante nommée `_C_JM` dans `fdr/elond.py`, partagée avec `fdr/elord_esaffron.py` via import.
 
@@ -87,7 +86,7 @@ alpha_t = omega_t * rw_t * (R_{t-1} + 1)
 delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 ```
 
-**Point subtil :** Le seuil 1/λ ne sert QUE pour le calcul du budget. La décision de rejet s'applique à TOUTES les hypothèses, candidates ou non. C'était incorrect dans le brief initial.
+**Point subtil :** Le seuil 1/λ ne sert QUE pour le calcul du budget. La décision de rejet s'applique à TOUTES les hypothèses, candidates ou non.
 
 **λ = 0.1** (pas 0.5 comme dans le SAFFRON p-value). Le papier recommande une valeur petite.
 
@@ -97,12 +96,12 @@ delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 
 ### e-LOND-bar et donation e-LOND : différés
 
-**Décision :** e-LOND-bar (online closure, O(t²) via dynamic programming) et donation e-LOND (O(log t) via online compound e-values) sont différés à une session ultérieure dédiée, avec un brief basé sur la lecture PDF complète de Xu-Fischer-Ramdas 2026.
+**Décision :** e-LOND-bar (online closure, O(t²) via dynamic programming) et donation e-LOND (O(log t) via online compound e-values) sont différés.
 
 **Raisons :**
-1. La formule closure DP n'est pas entièrement explicitée dans la portion HTML accessible.
-2. La notion de "γ-online compound e-value" (Section 2.2) nécessite un brief séparé.
-3. Mieux vaut valider l'intégration pipeline (Étape 7) avant d'ajouter des algorithmes supplémentaires.
+1. La formule closure DP n'est pas entièrement explicitée dans Xu-Fischer-Ramdas 2026.
+2. La notion de "γ-online compound e-value" (Section 2.2) nécessite une lecture dédiée.
+3. Mieux vaut valider l'intégration pipeline avant d'ajouter des algorithmes supplémentaires.
 
 **Ce qui est implémenté à la fin de step-6 :** e-BH, BH-LM, BH-BNS, e-LOND, e-LORD, e-SAFFRON, stopped e-BH. Soit 7 algorithmes, tous validés (FDR ≤ α + 2·SE sur streams Pareto et Heston).
 
