@@ -1,6 +1,6 @@
 # efdr-jumps
 
-**E-values for sequential jump detection in high-frequency finance with online FDR guarantees**
+**E-values for sequential jump detection in high-frequency with online FDR guarantees**
 
 M1 MAEF research project : Neyl Gasmi & Jules Brion  
 Supervisor: Alain Celisse (SAMM, Université Paris 1) : 2025-2026
