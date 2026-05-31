@@ -9,7 +9,7 @@ Supervisor: Alain Celisse (SAMM, Université Paris 1) : 2025-2026
 
 ## What this is
 
-This project detects price discontinuities (jumps) in high-frequency financial data in real time while controlling the false discovery rate (FDR) sequentially. The core finding: classical BH multiple testing violates FDR guarantees at 5-second frequency, while e-value-based procedures control it under arbitrary dependence.
+This project detects discontinuities (jumps) in high-frequency financial data in real time while controlling the false discovery rate (FDR) sequentially. The core finding: classical BH multiple testing violates FDR guarantees at 5-second frequency, while e-value-based procedures control it under arbitrary dependence.
 
 **Paper:** [`paper/publish.pdf`](paper/publish.pdf)
 
