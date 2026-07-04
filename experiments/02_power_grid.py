@@ -37,11 +37,8 @@ from efdr_jumps.pipeline.metrics import (
     rejection_rate,
 )
 
-# --------------------------------------------------------------------------- #
-# Task definition                                                              #
-# --------------------------------------------------------------------------- #
 
-
+# task definition
 def _make_task(
     algo: str,
     estimator: str,
@@ -100,11 +97,7 @@ def _run_task(
     }
 
 
-# --------------------------------------------------------------------------- #
-# Grid expansion                                                               #
-# --------------------------------------------------------------------------- #
-
-
+# grid expansion
 def _expand_grid(cfg: dict) -> list[tuple]:
     """Cartesian product of all grid dimensions, skipping inapplicable cells."""
     n_steps = int(cfg.get("n_steps", 500))
@@ -139,11 +132,7 @@ def _expand_grid(cfg: dict) -> list[tuple]:
     return tasks
 
 
-# --------------------------------------------------------------------------- #
-# Main                                                                         #
-# --------------------------------------------------------------------------- #
-
-
+# main
 def _print_ranking(df: pd.DataFrame, alpha: float) -> None:
     grp = df.groupby("algo")
     summary = grp.agg(

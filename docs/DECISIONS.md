@@ -4,7 +4,7 @@
 
 ---
 
-## Étape 6 — FDR algorithms (16 mai 2026)
+## FDR algorithms (16 mai 2026)
 
 ### Constante C_JM du γ_t de Javanmard-Montanari
 
@@ -22,7 +22,7 @@
 
 **Valeur utilisée :** `W_0 = 0.5` (défaut dans `elord()` via kwarg `w0`).
 
-**Justification :** partage équitable entre wealth initial et wealth accumulé par les rejets passés. Valeur canonique dans la littérature e-GAI (Zhang et al. 2025). Paramètre modifiable via kwarg pour les expériences de la grille (Étape 8 : `wealth_fractions` dans `grid_main.yaml`).
+**Justification :** partage équitable entre wealth initial et wealth accumulé par les rejets passés. Valeur canonique dans la littérature e-GAI (Zhang et al. 2025). Paramètre modifiable via kwarg pour les expériences de la grille (`wealth_fractions` dans `grid_main.yaml`).
 
 ---
 
@@ -117,7 +117,7 @@ delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 
 ---
 
-## Étape 8 — Grille Monte Carlo complète (session du 16 mai 2026)
+## Grille Monte Carlo complète (session du 16 mai 2026)
 
 ### Régime hawkes_dense : processus Hawkes auto-excitant
 
@@ -181,7 +181,7 @@ delta_t = 1{E_t >= 1/alpha_t}  # rejet INDÉPENDANT de la candidature
 
 ---
 
-## Findings — Étape 8 (grid_medium, 16 mai 2026)
+## Findings — grid_medium (16 mai 2026)
 
 ### Résultat principal : BH viole le FDR à haute fréquence, indépendamment du régime
 
@@ -217,4 +217,4 @@ Les e-values (ebh, elond, stopped_ebh) contrôlent le FDR à toutes les fréquen
 
 ## Sessions précédentes
 
-*(Décisions des Étapes 1–5 non documentées ici — ajoutées rétrospectivement si besoin.)*
+*(Décisions antérieures sur les simulateurs et estimateurs non documentées ici — ajoutées rétrospectivement si besoin.)*

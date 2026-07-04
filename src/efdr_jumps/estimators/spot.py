@@ -17,7 +17,7 @@ def spot_variance(
     The window used for σ̂²(i) is the K log-price observations strictly before
     index i+1, i.e., log_price[max(0, i-K+1) : i+1], which corresponds to
     returns r[max(0, i-K) : i].  Return r[i] is NEVER included in its own
-    estimator window — this is required for e-value validity (see CLAUDE.md §3).
+    estimator window — this is required for e-value validity.
 
     Parameters
     ----------

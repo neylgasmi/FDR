@@ -7,17 +7,15 @@ import numpy as np
 
 from ..simulate.base import SECS_PER_YEAR
 
-# --------------------------------------------------------------------------- #
-# Jump rate (jumps/year) per regime for n_steps=500, dt=5s.                   #
-# Expected jumps per path = lam * n_steps * dt / SECS_PER_YEAR               #
-#   rare:     ~0.64   moderate: ~2.12   dense: ~6.37                          #
-# --------------------------------------------------------------------------- #
+# jump rate (jumps/year) per regime for n_steps=500, dt=5s.
+# expected jumps per path = lam * n_steps * dt / SECS_PER_YEAR
+#   rare: ~0.64   moderate: ~2.12   dense: ~6.37
 _REGIME_LAM: dict[str, float] = {
     "heston_h0": 0.0,  # pure diffusion, no jumps
     "rare": 1_500.0,
     "moderate": 5_000.0,
     "dense": 15_000.0,
-    "hawkes_dense": 15_000.0,  # alias dense pour Merton approx
+    "hawkes_dense": 15_000.0,  # aliases "dense" for the Merton approximation
 }
 
 _ESTIMATOR_FNS: dict[str, object] = {}  # populated lazily on first import
@@ -39,11 +37,7 @@ def _get_estimator_fn(kind: str):
     return _ESTIMATOR_FNS[kind]
 
 
-# --------------------------------------------------------------------------- #
-# Config dataclasses                                                           #
-# --------------------------------------------------------------------------- #
-
-
+# config dataclasses
 @dataclass
 class SimulatorConfig:
     """Simulation parameters for one run."""
@@ -100,11 +94,7 @@ class DetectorResult:
     seed: int = 0
 
 
-# --------------------------------------------------------------------------- #
-# Core orchestrator                                                            #
-# --------------------------------------------------------------------------- #
-
-
+# core orchestrator
 def run_detector(
     sim_config: SimulatorConfig,
     est_config: EstimatorConfig,
@@ -113,8 +103,8 @@ def run_detector(
 ) -> DetectorResult:
     """Simulate → estimate vol → build e-values → run FDR → return result.
 
-    The spot-variance window excludes the test tick (required for e-value
-    validity — see CLAUDE.md §3 and estimators/spot.py).
+    The spot-variance window excludes the test tick, which is required for
+    e-value validity (see estimators/spot.py).
 
     Jump indices from PathSimulator are log-price indices (1-indexed), so
     the corresponding return index is j-1 for a jump at log_price[j].
@@ -122,9 +112,7 @@ def run_detector(
     t0 = time.perf_counter()
     rng = np.random.default_rng(seed)
 
-    # ------------------------------------------------------------------ #
-    # 1. Simulate                                                          #
-    # ------------------------------------------------------------------ #
+    # 1. simulate
     from ..simulate import HestonSimulator, MertonSimulator
 
     heston = HestonSimulator(
@@ -150,12 +138,10 @@ def run_detector(
     r = np.diff(log_price)  # (n_steps,) returns
     n = len(r)
 
-    # Ground-truth: convert log_price jump indices → return indices (0-based)
+    # ground truth: convert log_price jump indices to return indices (0-based)
     true_jumps = frozenset(int(j) - 1 for j in result.jump_indices if 1 <= int(j) <= n)
 
-    # ------------------------------------------------------------------ #
-    # 2. Dispatch to BH baselines or e-value procedures                   #
-    # ------------------------------------------------------------------ #
+    # 2. dispatch to bh baselines or e-value procedures
     algo = fdr_config.algo
     alpha = fdr_config.alpha
 
@@ -170,13 +156,13 @@ def run_detector(
     elif algo == "bh_bns":
         from ..fdr import bh_bns_global
 
-        # Test global jour-niveau : même décision pour tous les retours
+        # day-level global test: same decision applied to every return
         detected = bh_bns_global(log_price, alpha, sim_config.dt_seconds)
         r = np.diff(log_price)
         rejects_list = [detected] * len(r)
         rejection_set = frozenset(i for i, v in enumerate(rejects_list) if v)
     else:
-        # E-value based procedures
+        # e-value based procedures
         e_values = _compute_evalues(log_price, sim_config, est_config)
         rejection_set = _run_evalue_algo(e_values, alpha, fdr_config)
 
@@ -193,11 +179,7 @@ def run_detector(
     )
 
 
-# --------------------------------------------------------------------------- #
-# Internal helpers                                                             #
-# --------------------------------------------------------------------------- #
-
-
+# internal helpers
 def _compute_evalues(
     log_price: np.ndarray,
     sim_config: SimulatorConfig,

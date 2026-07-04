@@ -18,11 +18,8 @@ from efdr_jumps.pipeline.metrics import (
     rejection_rate,
 )
 
-# --------------------------------------------------------------------------- #
-# Metrics unit tests                                                           #
-# --------------------------------------------------------------------------- #
 
-
+# metrics unit tests
 def test_fdp_empty_rejection():
     assert fdp(frozenset(), frozenset({1, 2})) == 0.0
 
@@ -113,11 +110,7 @@ def test_aggregate_basic():
     assert agg["power"] == pytest.approx(0.9)
 
 
-# --------------------------------------------------------------------------- #
-# Detector smoke tests                                                         #
-# --------------------------------------------------------------------------- #
-
-
+# detector smoke tests
 def test_run_detector_heston_h0():
     """Pure diffusion run: rejection set must be a frozenset, FDP=0 trivially."""
     sim_cfg = SimulatorConfig(regime="heston_h0", n_steps=100, dt_seconds=5.0)

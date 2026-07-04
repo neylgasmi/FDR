@@ -9,10 +9,7 @@ from efdr_jumps.fdr.elond import elond
 from efdr_jumps.fdr.elord_esaffron import elord, esaffron
 from efdr_jumps.fdr.stopped_ebh import stopped_ebh
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
+# shared helpers
 _HESTON = None
 _MERTON = None
 
@@ -54,11 +51,7 @@ def _heston_evalues_h0(n: int, dt_s: float, rng: np.random.Generator) -> np.ndar
     return np.array([construct_evalue(r[i], sigma_hat, dt_years) for i in range(n)])
 
 
-# ---------------------------------------------------------------------------
-# e-BH: deterministic stream
-# ---------------------------------------------------------------------------
-
-
+# e-bh: deterministic stream
 def test_ebh_deterministic():
     """E=(1,1,100,1,1), alpha=0.1 → reject only index 2 (third element)."""
     ev = [1.0, 1.0, 100.0, 1.0, 1.0]
@@ -89,11 +82,7 @@ def test_ebh_empty():
     assert ebh([], alpha=0.1) == []
 
 
-# ---------------------------------------------------------------------------
-# e-BH: self-validity under H0 — Pareto stream
-# ---------------------------------------------------------------------------
-
-
+# e-bh: self-validity under h0 — pareto stream
 @pytest.mark.slow
 def test_ebh_fdr_validity_pareto():
     """FDR ≤ alpha + 2·SE on Pareto-1 e-value stream (M=1000 reps)."""
@@ -114,11 +103,7 @@ def test_ebh_fdr_validity_pareto():
     assert fdr <= alpha + 2 * se, f"e-BH Pareto FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# e-BH: self-validity under H0 — Heston diffusion stream
-# ---------------------------------------------------------------------------
-
-
+# e-bh: self-validity under h0 — heston diffusion stream
 @pytest.mark.slow
 def test_ebh_fdr_validity_heston():
     """FDR ≤ alpha + 2·SE on Heston pure-diffusion e-values (M=1000 reps)."""
@@ -139,11 +124,7 @@ def test_ebh_fdr_validity_heston():
     assert fdr <= alpha + 2 * se, f"e-BH Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# BH baselines: deterministic stream
-# ---------------------------------------------------------------------------
-
-
+# bh baselines: deterministic stream
 def test_bh_deterministic_reject_one():
     """p=(0.9, 0.9, 0.001, 0.9, 0.9), alpha=0.1 → reject only index 2."""
     pv = [0.9, 0.9, 0.001, 0.9, 0.9]
@@ -170,11 +151,7 @@ def test_bh_empty():
     assert bh([], alpha=0.1) == []
 
 
-# ---------------------------------------------------------------------------
-# BH baselines: self-validity under H0 — uniform p-values
-# ---------------------------------------------------------------------------
-
-
+# bh baselines: self-validity under h0 — uniform p-values
 @pytest.mark.slow
 def test_bh_fdr_validity_uniform():
     """FDR ≤ alpha + 2·SE on Uniform(0,1) p-values (M=1000 reps)."""
@@ -194,11 +171,7 @@ def test_bh_fdr_validity_uniform():
     assert fdr <= alpha + 2 * se, f"BH uniform FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# e-LOND: deterministic stream
-# ---------------------------------------------------------------------------
-
-
+# e-lond: deterministic stream
 def test_elond_deterministic_no_rejection():
     """E=(1,1,100,1,1), alpha=0.1 → e-LOND rejects ∅.
 
@@ -231,11 +204,7 @@ def test_elond_empty():
     assert list(elond([], alpha=0.1)) == []
 
 
-# ---------------------------------------------------------------------------
-# e-LOND: self-validity under H0 — Pareto stream
-# ---------------------------------------------------------------------------
-
-
+# e-lond: self-validity under h0 — pareto stream
 @pytest.mark.slow
 def test_elond_fdr_validity_pareto():
     """FDR ≤ alpha + 2·SE on Pareto-1 e-values (M=1000 reps)."""
@@ -275,11 +244,7 @@ def test_elond_fdr_validity_heston():
     assert fdr <= alpha + 2 * se, f"e-LOND Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# e-LORD: deterministic stream (RAI framework, Zhang et al. 2025)
-# ---------------------------------------------------------------------------
-
-
+# e-lord: deterministic stream (rai framework, zhang et al. 2025)
 def test_elord_deterministic_aggressive():
     """E=(1,1,100,1,1), alpha=0.1, w1=0.2 → e-LORD rejects {3}.
 
@@ -317,11 +282,7 @@ def test_elord_omega_increases_after_no_rejection():
     assert results == [False, False]
 
 
-# ---------------------------------------------------------------------------
-# e-LORD: self-validity under H0 — Pareto stream
-# ---------------------------------------------------------------------------
-
-
+# e-lord: self-validity under h0 — pareto stream
 @pytest.mark.slow
 def test_elord_fdr_validity_pareto():
     """FDR ≤ alpha + 2·SE on Pareto-calibrated e-values (M=1000 reps)."""
@@ -361,11 +322,7 @@ def test_elord_fdr_validity_heston():
     assert fdr <= alpha + 2 * se, f"e-LORD Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# e-SAFFRON: deterministic stream
-# ---------------------------------------------------------------------------
-
-
+# e-saffron: deterministic stream
 def test_esaffron_deterministic():
     """E=(1,1,100,1,1), alpha=0.1, w1=0.2, lambda=0.1 → e-SAFFRON rejects {3}.
 
@@ -380,24 +337,14 @@ def test_esaffron_deterministic():
 
 def test_esaffron_candidate_preserves_wealth():
     """Observation of a candidate (E >= 1/lambda) does not drain rw."""
-    # Two streams: first non-candidate then candidate (or reversed).
-    # After seeing a candidate, rw stays high → larger budget for next test.
     alpha = 0.1
     w1 = 0.2
     lam = 0.1
-    # Stream A: non-candidate (e=1) then tested (e=1e-9)
-    stream_A = [1.0, 1e-9]
-    # Stream B: candidate (e=100) then tested (e=1e-9)
-    stream_B = [100.0, 1e-9]
-    # budget at t=2 should be larger after seeing a candidate
-    # We proxy this by looking at how many total rejections occur on a long stream
+    stream_A = [1.0, 1e-9]  # non-candidate, then a tiny e-value
+    stream_B = [100.0, 1e-9]  # candidate, then the same tiny e-value
 
-    # Direct check: run both and compare alpha at t=2 by observing threshold
-    # Easiest: stream_B's non-rejection at t=2 has higher threshold (more wealth left)
-    # Not directly observable from the generator — instead verify via FDR behavior
     results_A = list(esaffron(stream_A, alpha, w1=w1, lambda_cand=lam))
     results_B = list(esaffron(stream_B, alpha, w1=w1, lambda_cand=lam))
-    # Both should not reject the tiny e-value — just verify no errors
     assert results_A[1] is False
     assert results_B[1] is False
 
@@ -406,11 +353,7 @@ def test_esaffron_empty():
     assert list(esaffron([], alpha=0.1)) == []
 
 
-# ---------------------------------------------------------------------------
-# e-SAFFRON: self-validity under H0 — Pareto stream
-# ---------------------------------------------------------------------------
-
-
+# e-saffron: self-validity under h0 — pareto stream
 @pytest.mark.slow
 def test_esaffron_fdr_validity_pareto():
     """FDR ≤ alpha + 2·SE on Pareto-calibrated e-values (M=1000 reps)."""
@@ -450,11 +393,7 @@ def test_esaffron_fdr_validity_heston():
     assert fdr <= alpha + 2 * se, f"e-SAFFRON Heston FDR={fdr:.4f} > alpha+2SE={alpha + 2*se:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# Stopped e-BH: deterministic stream
-# ---------------------------------------------------------------------------
-
-
+# stopped e-bh: deterministic stream
 def test_stopped_ebh_deterministic():
     """E=(1,1,100,1,1), alpha=0.1 → stopped e-BH rejects only index 2.
 
@@ -480,11 +419,7 @@ def test_stopped_ebh_agrees_with_ebh_offline():
     assert online_last[-1] == offline[-1]
 
 
-# ---------------------------------------------------------------------------
-# Stopped e-BH: self-validity under H0 — Pareto stream
-# ---------------------------------------------------------------------------
-
-
+# stopped e-bh: self-validity under h0 — pareto stream
 @pytest.mark.slow
 def test_stopped_ebh_fdr_validity_pareto():
     """FDR ≤ alpha + 2·SE on Pareto-1 e-values (M=1000 reps)."""

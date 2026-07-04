@@ -57,7 +57,7 @@ class MertonSimulator(PathSimulator):
         base = heston_adj.simulate(n_steps, dt_seconds, rng)
         log_s = base.log_price.copy()
 
-        # --- compound Poisson overlay ---
+        # compound Poisson overlay
         lam_dt = self.lam * dt
         n_jumps_per_step = rng.poisson(lam_dt, n_steps)
 

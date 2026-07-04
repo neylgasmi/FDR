@@ -11,7 +11,7 @@ class NoisyPath(PathSimulator):
 
     Two models are supported:
     - "additive" : ε_i ~ N(0, σ_noise²)  — standard additive MMN model
-    - "one_sided": ε_i ~ Exp(1/σ_noise)  — one-sided à la Bibinger (2024),
+    - "one_sided": ε_i ~ Exp(1/σ_noise)  — one-sided, as in Bibinger (2024),
                    modeling bid-ask spread noise where prices are always quoted
                    above the efficient price (ask side).
 

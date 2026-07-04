@@ -4,11 +4,10 @@ from collections.abc import Iterable, Iterator
 
 import numpy as np
 
-# Normalization constant for the Javanmard-Montanari gamma sequence.
+# normalization constant for the Javanmard-Montanari gamma sequence.
 # gamma_t = _C_JM * log(max(t,2)) / (t * exp(sqrt(log(max(t,2)))))
-# Verified by truncated summation to t=10^6: sum ≈ 1.000000.
-# (User brief suggested C≈0.0722; numerical check gives C≈0.1571 for this
-# exact formula — see DECISIONS.md for derivation.)
+# calibrated so that sum_t gamma_t = 1 (verified by truncated summation to
+# t=10^6, see docs/DECISIONS.md for the derivation)
 _C_JM: float = 0.15708906
 
 

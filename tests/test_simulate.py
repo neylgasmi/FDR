@@ -15,10 +15,7 @@ from efdr_jumps.simulate import (
 
 RNG = np.random.default_rng(42)
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
+# helpers
 TRADING_DAY_SECONDS = 6.5 * 3600  # 23 400 s
 DT_1S = 1.0
 N_DAY = int(TRADING_DAY_SECONDS)  # 23 400 steps
@@ -28,11 +25,7 @@ def _fresh_rng() -> np.random.Generator:
     return np.random.default_rng(0)
 
 
-# ---------------------------------------------------------------------------
-# Interface / shape tests
-# ---------------------------------------------------------------------------
-
-
+# interface / shape tests
 def test_heston_result_shapes() -> None:
     sim = HestonSimulator()
     n = 500
@@ -62,11 +55,7 @@ def test_noisy_path_shapes() -> None:
     assert res.log_price.shape == (n + 1,)
 
 
-# ---------------------------------------------------------------------------
-# KS normality check on standardised increments (no-jump Heston)
-# ---------------------------------------------------------------------------
-
-
+# ks normality check on standardised increments (no-jump heston)
 def test_heston_increments_approximately_normal() -> None:
     """
     With very fast mean reversion (kappa=200) V_t ≈ theta for all t.
@@ -91,11 +80,7 @@ def test_heston_increments_approximately_normal() -> None:
     assert pvalue > 0.01, f"KS p-value too low: {pvalue:.4f} (stat={stat:.4f})"
 
 
-# ---------------------------------------------------------------------------
-# Jump index recovery tests
-# ---------------------------------------------------------------------------
-
-
+# jump index recovery tests
 def test_merton_no_jump_when_lam_zero() -> None:
     sim = MertonSimulator(lam=0.0)
     res = sim.simulate(1_000, DT_1S, _fresh_rng())
@@ -147,11 +132,7 @@ def test_jump_indices_within_valid_range() -> None:
         assert res.jump_indices.max() <= n
 
 
-# ---------------------------------------------------------------------------
-# Noise tests
-# ---------------------------------------------------------------------------
-
-
+# noise tests
 def test_additive_noise_variance() -> None:
     """
     Measure noise directly by drawing it from the same RNG twice.
@@ -186,10 +167,7 @@ def test_one_sided_noise_mean() -> None:
     np.testing.assert_allclose(noise.mean(), sigma_noise, rtol=0.05)
 
 
-# ---------------------------------------------------------------------------
-# Step 3 — Noise module: variance via NoisyPath, pre-averaging, 3-versions
-# ---------------------------------------------------------------------------
-
+# noise module: variance via noisypath, pre-averaging
 # HestonSimulator.simulate consumes exactly 3·n_steps values from the RNG
 # (uniform, normal, normal).  NoisyPath then draws n_steps+1 more.
 # Using the same seed guarantees that both NoisyPath variants (additive,
@@ -290,11 +268,7 @@ def test_three_versions_from_same_seed() -> None:
     np.testing.assert_array_equal(clean.jump_indices, noisy_one.jump_indices)
 
 
-# ---------------------------------------------------------------------------
-# Performance: 1 trading day at 1-second resolution in < 100 ms
-# ---------------------------------------------------------------------------
-
-
+# performance: 1 trading day at 1-second resolution in < 100 ms
 @pytest.mark.slow
 def test_heston_merton_day_speed() -> None:
     """Exit criterion: 1-second × 23 400 steps in < 100 ms (post JIT warm-up)."""

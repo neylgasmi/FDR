@@ -7,22 +7,17 @@ from scipy import stats
 from efdr_jumps.estimators import medrv
 from efdr_jumps.simulate import HestonSimulator, MertonSimulator
 
-# Fixtures partagées
+# shared fixtures
 _HESTON = HestonSimulator(kappa=2.0, theta=0.04, xi=0.5, rho=-0.7, v0=0.04)
 _MERTON = MertonSimulator(heston=_HESTON, lam=5.0, mu_j=-0.01, sigma_j=0.02)
 
 DT_5S = 5.0
 
 
-# ---------------------------------------------------------------------------
-# Test 1: Distribution H0 vs H1 — séparation visuelle
-# ---------------------------------------------------------------------------
-
-
+# test 1: distribution h0 vs h1 — visual separation
 @pytest.mark.slow
 def test_evalue_h0_vs_h1_separation() -> None:
     """
-    Test 1 (CLAUDE.md Step 4):
     Simulate M=10000 paths under H0 (no jump) and H1 (fixed jump size at known location).
     Compare empirical distributions of E_i.
 
@@ -78,15 +73,10 @@ def test_evalue_h0_vs_h1_separation() -> None:
     assert pvalue < 0.001, f"KS p-value {pvalue:.4f} — distributions not significantly different"
 
 
-# ---------------------------------------------------------------------------
-# Test 2: E-power monotone in jump size
-# ---------------------------------------------------------------------------
-
-
+# test 2: e-power monotone in jump size
 @pytest.mark.slow
 def test_epower_monotone_in_jump_size() -> None:
     """
-    Test 2 (CLAUDE.md Step 4):
     E-power := E_H1[log E_i] should increase monotonically with jump size.
 
     Compute e-power at jump sizes s ∈ {1, 2, 3, 4, 5} × σ_local.
@@ -124,15 +114,10 @@ def test_epower_monotone_in_jump_size() -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# Test 3: Dominance vs baselines (E≡1 and p-to-e calibrator)
-# ---------------------------------------------------------------------------
-
-
+# test 3: dominance vs baselines (e≡1 and p-to-e calibrator)
 @pytest.mark.slow
 def test_epower_dominates_baselines() -> None:
     """
-    Test 3 (CLAUDE.md Step 4):
     Our E_i should dominate:
     (a) trivial e-value E ≡ 1 (zero e-power)
     (b) p-to-e calibrated from Lee-Mykland p-value (Vovk-Wang 2021)
@@ -185,15 +170,10 @@ def test_epower_dominates_baselines() -> None:
     assert epower_ours > epower_lm, f"E-power {epower_ours:.4f} not > LM baseline {epower_lm:.4f}"
 
 
-# ---------------------------------------------------------------------------
-# Test 4: Validity — E[E_i] ≤ 1 under H0
-# ---------------------------------------------------------------------------
-
-
+# test 4: validity — e[e_i] ≤ 1 under h0
 @pytest.mark.slow
 def test_evalue_validity_h0() -> None:
     """
-    Test 4 (CLAUDE.md Step 4):
     Under pure H0 (no jumps) over M=10000 reps, the empirical mean E[E_i] must be ≤ 1 + 3·SE.
 
     This is a necessary condition for FDR control downstream.

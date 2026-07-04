@@ -17,10 +17,7 @@ from efdr_jumps.estimators import (
 )
 from efdr_jumps.simulate import HestonSimulator, MertonSimulator
 
-# ---------------------------------------------------------------------------
-# Shared fixtures
-# ---------------------------------------------------------------------------
-
+# shared fixtures
 _HESTON = HestonSimulator(kappa=2.0, theta=0.04, xi=0.5, rho=-0.7, v0=0.04)
 _MERTON = MertonSimulator(heston=_HESTON, lam=5.0, mu_j=-0.01, sigma_j=0.02)
 
@@ -44,11 +41,7 @@ def _sim_jump(n: int, dt: float, seed: int) -> np.ndarray:
     return _MERTON.simulate(n, dt, np.random.default_rng(seed)).log_price
 
 
-# ---------------------------------------------------------------------------
-# 1. Convergence under no-jump diffusion
-# ---------------------------------------------------------------------------
-
-
+# 1. convergence under no-jump diffusion
 @pytest.mark.slow
 def test_estimators_converge_no_jump() -> None:
     """
@@ -70,11 +63,7 @@ def test_estimators_converge_no_jump() -> None:
             )
 
 
-# ---------------------------------------------------------------------------
-# 2. Bias under moderate jumps (MedRV/MinRV robust, BV/RV biased)
-# ---------------------------------------------------------------------------
-
-
+# 2. bias under moderate jumps (medrv/minrv robust, bv/rv biased)
 @pytest.mark.slow
 def test_medrv_minrv_bias_under_jumps() -> None:
     """
@@ -108,11 +97,7 @@ def test_medrv_minrv_bias_under_jumps() -> None:
     assert rb_rv > 0.05, f"RV should be upward biased; got {rb_rv:.2%}"
 
 
-# ---------------------------------------------------------------------------
-# 3. Spot variance: window explicitly excludes the test point
-# ---------------------------------------------------------------------------
-
-
+# 3. spot variance: window explicitly excludes the test point
 def test_spot_window_excludes_test_point() -> None:
     """
     assert_window_excludes_test_point verifies that corrupting return r[i]
@@ -147,11 +132,7 @@ def test_spot_variance_roughly_correct() -> None:
     np.testing.assert_allclose(valid.mean(), _HESTON.theta, rtol=0.25)
 
 
-# ---------------------------------------------------------------------------
-# 4. Lee-Mykland statistic: under H0, approximately standard normal
-# ---------------------------------------------------------------------------
-
-
+# 4. lee-mykland statistic: under h0, approximately standard normal
 def test_lee_mykland_approximately_normal() -> None:
     """Under no-jump Heston, L(i) should be ≈ N(0,1)."""
     from scipy import stats
@@ -164,11 +145,7 @@ def test_lee_mykland_approximately_normal() -> None:
     assert pvalue > 0.01, f"KS p-value {pvalue:.4f} too low — L(i) not ≈ N(0,1)"
 
 
-# ---------------------------------------------------------------------------
-# 5. BNS stat: positive under jumps, near zero under no-jump
-# ---------------------------------------------------------------------------
-
-
+# 5. bns stat: positive under jumps, near zero under no-jump
 def test_bns_stat_near_zero_under_no_jump() -> None:
     """Under no-jump Heston, BNS stat should be small (not extreme)."""
     n = 4_000
@@ -187,11 +164,7 @@ def test_bns_stat_larger_under_jumps() -> None:
     assert np.mean(with_jump) > np.mean(no_jump), "BNS stat not larger under jumps"
 
 
-# ---------------------------------------------------------------------------
-# 6. Pre-averaging: noise-robust (basic sanity on noisy path)
-# ---------------------------------------------------------------------------
-
-
+# 6. pre-averaging: noise-robust (basic sanity on noisy path)
 def test_preavg_rv_sanity() -> None:
     """Pre-averaged RV returns a positive finite value."""
     n = 2_000
